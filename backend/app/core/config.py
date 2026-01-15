@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     DEBUG: bool = True
     
-    # Database
-    DATABASE_URL: str = "mysql+pymysql://root:@localhost:3306/antambahoaka_connect"
+    # Database - CORRIGÉ: nom de la base de données
+    DATABASE_URL: str = "mysql+pymysql://root:@localhost:3306/mananjary-mi"
     
     # JWT
     SECRET_KEY: str = "your-secret-key-change-in-production"
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     
     # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000"]
+    CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
     
     class Config:
         env_file = ".env"

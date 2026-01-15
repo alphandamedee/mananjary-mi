@@ -10,6 +10,7 @@ import Dons from '../components/Dashboard/Dons'
 import Evenements from '../components/Dashboard/Evenements'
 import Coutumes from '../components/Dashboard/Coutumes'
 import Logs from '../components/Dashboard/Logs'
+import Profile from '../components/Dashboard/Profile'
 import './Dashboard.css'
 
 function Dashboard() {
@@ -20,6 +21,12 @@ function Dashboard() {
   const handleLogout = () => {
     logout()
     navigate('/login')
+  }
+
+  const getPhotoUrl = (photo) => {
+    if (!photo) return null
+    if (photo.startsWith('http')) return photo
+    return `http://localhost:8000/${photo}`
   }
 
   return (
@@ -36,18 +43,29 @@ function Dashboard() {
           </div>
           
           <div className="header-right">
-            <div className="user-info">
-              <span className="user-name">
-                {user?.prenom ? `${user.prenom} ${user.nom}` : user?.nom}
-              </span>
-              <span className="user-role badge badge-success">
-                {user?.user_type === 'super_admin' && 'Super Admin'}
-                {user?.user_type === 'admin' && 'Admin'}
-                {user?.user_type === 'user' && 'Membre'}
-              </span>
+            <div className="user-profile-header">
+              <div className="user-avatar-small">
+                {user?.photo ? (
+                  <img src={getPhotoUrl(user.photo)} alt={user.prenom} />
+                ) : (
+                  <div className="avatar-placeholder-small">
+                    {user?.prenom?.[0]}{user?.nom?.[0]}
+                  </div>
+                )}
+              </div>
+              <div className="user-info">
+                <span className="user-name">
+                  {user?.prenom ? `${user.prenom} ${user.nom}` : user?.nom}
+                </span>
+                <span className="user-role badge badge-success">
+                  {user?.user_type === 'super_admin' && 'Super Admin'}
+                  {user?.user_type === 'admin' && 'Admin'}
+                  {user?.user_type === 'user' && 'Membre'}
+                </span>
+              </div>
             </div>
-            <button className="btn btn-danger" onClick={handleLogout}>
-              Déconnexion
+            <button className="btn-logout-icon" onClick={handleLogout} title="Déconnexion">
+              🔴
             </button>
           </div>
         </header>
@@ -62,6 +80,7 @@ function Dashboard() {
             <Route path="/evenements" element={<Evenements />} />
             <Route path="/coutumes" element={<Coutumes />} />
             <Route path="/logs" element={<Logs />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         </main>
       </div>

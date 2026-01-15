@@ -7,7 +7,7 @@ from typing import List
 
 from app.db.database import get_db
 from app.schemas.schemas import EvenementCreate, EvenementUpdate, EvenementResponse
-from app.models.models import Evenement, Admin, LogActivite, ActorType
+from app.models.models import Evenement, User, LogActivite, ActorTypeEnum
 
 router = APIRouter()
 
@@ -32,10 +32,11 @@ async def get_evenement(evenement_id: int, db: Session = Depends(get_db)):
 async def create_evenement(evenement: EvenementCreate, db: Session = Depends(get_db)):
     """Create a new evenement"""
     
-    # Verify admin exists
-    admin = db.query(Admin).filter(Admin.id == evenement.id_admin).first()
-    if not admin:
-        raise HTTPException(status_code=404, detail="Admin non trouvé")
+    # Verify admin exists (user with role admin)
+    if evenement.id_admin:
+        admin = db.query(User).filter(User.id == evenement.id_admin).first()
+        if not admin:
+            raise HTTPException(status_code=404, detail="Admin non trouvé")
     
     db_evenement = Evenement(**evenement.model_dump())
     db.add(db_evenement)
@@ -44,9 +45,10 @@ async def create_evenement(evenement: EvenementCreate, db: Session = Depends(get
     
     # Log activity
     log = LogActivite(
-        acteur_type=ActorType.ADMIN,
-        acteur_id=evenement.id_admin,
-        action=f"Nouvel événement: {evenement.titre}"
+        acteur_type=ActorTypeEnum.ADMIN,
+        acteur_id=evenement.id_admin if evenement.id_admin else 0,
+        action="Nouvel événement",
+        description=f"{evenement.titre} - {evenement.type.value}"
     )
     db.add(log)
     db.commit()

@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.db.database import get_db
-from app.schemas.schemas import DonCreate, DonUpdate, DonResponse
-from app.models.models import Don, User, LogActivite, ActorType
+from app.schemas.schemas import DonCreate, DonResponse
+from app.models.models import Don, User, LogActivite, ActorTypeEnum
 
 router = APIRouter()
 
@@ -33,8 +33,8 @@ async def create_don(don: DonCreate, db: Session = Depends(get_db)):
     """Create a new don"""
     
     # Verify user if provided
-    if don.user_id:
-        user = db.query(User).filter(User.id == don.user_id).first()
+    if don.id_user:
+        user = db.query(User).filter(User.id == don.id_user).first()
         if not user:
             raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
     
@@ -44,31 +44,15 @@ async def create_don(don: DonCreate, db: Session = Depends(get_db)):
     db.refresh(db_don)
     
     # Log activity
-    actor_id = don.user_id if don.user_id else 0
+    actor_id = don.id_user if don.id_user else 0
     log = LogActivite(
-        acteur_type=ActorType.USER if don.user_id else ActorType.SYSTEM,
+        acteur_type=ActorTypeEnum.USER if don.id_user else ActorTypeEnum.USER,
         acteur_id=actor_id,
-        action=f"Nouveau don: {don.montant} Ar ({don.type_don.value})"
+        action="Nouveau don",
+        description=f"{don.montant} Ar - Anonyme: {don.anonyme}"
     )
     db.add(log)
     db.commit()
-    
-    return db_don
-
-
-@router.put("/{don_id}", response_model=DonResponse)
-async def update_don(don_id: int, don_update: DonUpdate, db: Session = Depends(get_db)):
-    """Update don"""
-    db_don = db.query(Don).filter(Don.id == don_id).first()
-    if not db_don:
-        raise HTTPException(status_code=404, detail="Don non trouvé")
-    
-    update_data = don_update.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(db_don, field, value)
-    
-    db.commit()
-    db.refresh(db_don)
     
     return db_don
 

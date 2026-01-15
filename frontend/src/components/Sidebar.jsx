@@ -4,6 +4,7 @@ import './Sidebar.css'
 function Sidebar({ isOpen, toggleSidebar }) {
   const menuItems = [
     { path: '/dashboard', label: 'Tableau de bord', icon: '📊' },
+    { path: '/dashboard/profile', label: 'Mon Profil', icon: '👤' },
     { path: '/dashboard/tragnobes', label: 'Tragnobes', icon: '🏘️' },
     { path: '/dashboard/members', label: 'Membres', icon: '👥' },
     { path: '/dashboard/cotisations', label: 'Cotisations', icon: '💰' },
@@ -19,7 +20,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
       
       <aside className={`sidebar ${isOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-header">
-          <h2>🏛️ Menu</h2>
+          <h2>🏛️ Mananjary-mi</h2>
         </div>
 
         <nav className="sidebar-nav">

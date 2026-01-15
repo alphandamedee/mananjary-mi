@@ -44,9 +44,18 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true }
     } catch (error) {
+      const errorMsg = error.response?.data?.detail;
+      let errorText = 'Erreur de connexion';
+      
+      if (typeof errorMsg === 'string') {
+        errorText = errorMsg;
+      } else if (Array.isArray(errorMsg)) {
+        errorText = errorMsg.map(e => e.msg || e).join(', ');
+      }
+      
       return {
         success: false,
-        error: error.response?.data?.detail || 'Erreur de connexion',
+        error: errorText,
       }
     }
   }
@@ -56,9 +65,18 @@ export const AuthProvider = ({ children }) => {
       const response = await api.post('/auth/register', userData)
       return { success: true, data: response.data }
     } catch (error) {
+      const errorMsg = error.response?.data?.detail;
+      let errorText = 'Erreur d\'inscription';
+      
+      if (typeof errorMsg === 'string') {
+        errorText = errorMsg;
+      } else if (Array.isArray(errorMsg)) {
+        errorText = errorMsg.map(e => e.msg || e).join(', ');
+      }
+      
       return {
         success: false,
-        error: error.response?.data?.detail || 'Erreur d\'inscription',
+        error: errorText,
       }
     }
   }
@@ -69,12 +87,19 @@ export const AuthProvider = ({ children }) => {
     setUser(null)
   }
 
+  const updateUser = (updatedUserData) => {
+    const updatedUser = { ...user, ...updatedUserData }
+    setUser(updatedUser)
+    localStorage.setItem('user', JSON.stringify(updatedUser))
+  }
+
   const value = {
     user,
     loading,
     login,
     register,
     logout,
+    updateUser,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

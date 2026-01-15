@@ -7,7 +7,7 @@ from typing import List
 
 from app.db.database import get_db
 from app.schemas.schemas import CotisationCreate, CotisationUpdate, CotisationResponse
-from app.models.models import Cotisation, User, LogActivite, ActorType
+from app.models.models import Cotisation, User, LogActivite, ActorTypeEnum
 
 router = APIRouter()
 
@@ -33,7 +33,7 @@ async def create_cotisation(cotisation: CotisationCreate, db: Session = Depends(
     """Create a new cotisation"""
     
     # Verify user exists
-    user = db.query(User).filter(User.id == cotisation.user_id).first()
+    user = db.query(User).filter(User.id == cotisation.id_user).first()
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
     
@@ -44,9 +44,10 @@ async def create_cotisation(cotisation: CotisationCreate, db: Session = Depends(
     
     # Log activity
     log = LogActivite(
-        acteur_type=ActorType.USER,
-        acteur_id=cotisation.user_id,
-        action=f"Nouvelle cotisation: {cotisation.montant} Ar ({cotisation.type_cotisation.value})"
+        acteur_type=ActorTypeEnum.USER,
+        acteur_id=cotisation.id_user,
+        action="Nouvelle cotisation",
+        description=f"{cotisation.montant} Ar - {cotisation.moyen_paiement.value}"
     )
     db.add(log)
     db.commit()

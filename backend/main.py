@@ -2,10 +2,13 @@
 Mananjary-mi - FastAPI Backend
 Main application entry point
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from starlette.staticfiles import StaticFiles
 import os
+import traceback
 
 from app.core.config import settings
 from app.api.v1.api import api_router
@@ -22,6 +25,33 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc",
 )
+
+# Add validation error handler
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print(f"\n{'='*80}")
+    print(f"VALIDATION ERROR:")
+    print(f"Body: {exc.body}")
+    print(f"Errors: {exc.errors()}")
+    print(f"{'='*80}\n")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": exc.body}
+    )
+
+# Add exception handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    print(f"\n{'='*80}")
+    print(f"EXCEPTION CAUGHT: {type(exc).__name__}")
+    print(f"Message: {exc}")
+    print(f"Traceback:")
+    traceback.print_exc()
+    print(f"{'='*80}\n")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"{type(exc).__name__}: {str(exc)}"}
+    )
 
 # CORS Configuration
 app.add_middleware(

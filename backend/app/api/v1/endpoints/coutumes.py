@@ -7,7 +7,7 @@ from typing import List
 
 from app.db.database import get_db
 from app.schemas.schemas import CoutumeCreate, CoutumeUpdate, CoutumeResponse
-from app.models.models import Coutume, SuperAdmin, LogActivite, ActorType
+from app.models.models import Coutume, User, LogActivite, ActorTypeEnum
 
 router = APIRouter()
 
@@ -39,9 +39,10 @@ async def create_coutume(coutume: CoutumeCreate, db: Session = Depends(get_db)):
     
     # Log activity
     log = LogActivite(
-        acteur_type=ActorType.SUPER_ADMIN,
+        acteur_type=ActorTypeEnum.SUPER_ADMIN,
         acteur_id=coutume.created_by if coutume.created_by else 0,
-        action=f"Nouvelle coutume: {coutume.nom}"
+        action="Nouvelle coutume",
+        description=f"{coutume.titre}"
     )
     db.add(log)
     db.commit()
