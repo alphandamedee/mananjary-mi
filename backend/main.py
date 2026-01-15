@@ -4,7 +4,7 @@ Main application entry point
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from starlette.staticfiles import StaticFiles
 import os
 
 from app.core.config import settings
