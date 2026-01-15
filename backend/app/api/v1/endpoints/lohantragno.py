@@ -8,6 +8,7 @@ from typing import List, Optional
 from app.db.database import get_db
 from app.schemas.schemas import LohantragnoCreate, LohantragnoUpdate, LohantragnoResponse
 from app.models.models import Lohantragno, Tragnobe, LogActivite, ActorTypeEnum
+from app.core.security import get_current_user
 
 router = APIRouter()
 
@@ -51,7 +52,11 @@ async def get_lohantragno_by_tragnobe(tragnobe_id: int, db: Session = Depends(ge
 
 
 @router.post("/", response_model=LohantragnoResponse, status_code=status.HTTP_201_CREATED)
-async def create_lohantragno(lohantragno: LohantragnoCreate, db: Session = Depends(get_db)):
+async def create_lohantragno(
+    lohantragno: LohantragnoCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """Create a new lohantragno"""
     
     # Verify tragnobe exists
@@ -64,10 +69,10 @@ async def create_lohantragno(lohantragno: LohantragnoCreate, db: Session = Depen
     db.commit()
     db.refresh(db_lohantragno)
     
-    # Log activity
+    # Log activity with actual user
     log = LogActivite(
-        acteur_type=ActorTypeEnum.ADMIN,
-        acteur_id=0,
+        acteur_type=ActorTypeEnum(current_user.get("user_type", "user")),
+        acteur_id=current_user.get("user_id", 0),
         action="Création lohantragno",
         description=f"{db_lohantragno.nom} - Tragnobe: {tragnobe.nom}"
     )
@@ -81,7 +86,8 @@ async def create_lohantragno(lohantragno: LohantragnoCreate, db: Session = Depen
 async def update_lohantragno(
     lohantragno_id: int, 
     lohantragno_update: LohantragnoUpdate, 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
 ):
     """Update lohantragno"""
     db_lohantragno = db.query(Lohantragno).filter(Lohantragno.id == lohantragno_id).first()
@@ -102,17 +108,43 @@ async def update_lohantragno(
     db.commit()
     db.refresh(db_lohantragno)
     
+    # Log activity
+    log = LogActivite(
+        acteur_type=ActorTypeEnum(current_user.get("user_type", "user")),
+        acteur_id=current_user.get("user_id", 0),
+        action="Modification lohantragno",
+        description=f"{db_lohantragno.nom}"
+    )
+    db.add(log)
+    db.commit()
+    
     return db_lohantragno
 
 
 @router.delete("/{lohantragno_id}")
-async def delete_lohantragno(lohantragno_id: int, db: Session = Depends(get_db)):
+async def delete_lohantragno(
+    lohantragno_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """Delete lohantragno"""
     db_lohantragno = db.query(Lohantragno).filter(Lohantragno.id == lohantragno_id).first()
     if not db_lohantragno:
         raise HTTPException(status_code=404, detail="Lohantragno non trouvé")
     
+    lohantragno_nom = db_lohantragno.nom
+    
     db.delete(db_lohantragno)
+    db.commit()
+    
+    # Log activity
+    log = LogActivite(
+        acteur_type=ActorTypeEnum(current_user.get("user_type", "user")),
+        acteur_id=current_user.get("user_id", 0),
+        action="Suppression lohantragno",
+        description=f"{lohantragno_nom}"
+    )
+    db.add(log)
     db.commit()
     
     return {"message": "Lohantragno supprimé avec succès"}

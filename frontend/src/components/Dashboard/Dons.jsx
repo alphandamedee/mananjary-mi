@@ -20,6 +20,17 @@ function Dons() {
     }
   }
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '-'
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return '-'
+      return date.toLocaleDateString('fr-FR')
+    } catch {
+      return '-'
+    }
+  }
+
   if (loading) {
     return <div className="loading"><div className="spinner"></div></div>
   }
@@ -54,7 +65,7 @@ function Dons() {
                 </td>
                 <td><strong>{parseFloat(don.montant).toLocaleString('fr-FR')} Ar</strong></td>
                 <td><span className="badge badge-success">{don.type_don}</span></td>
-                <td>{new Date(don.date_don).toLocaleDateString('fr-FR')}</td>
+                <td>{formatDate(don.created_at)}</td>
                 <td>{don.description || '-'}</td>
               </tr>
             ))}

@@ -20,6 +20,17 @@ function Coutumes() {
     }
   }
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '-'
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return '-'
+      return date.toLocaleDateString('fr-FR')
+    } catch {
+      return '-'
+    }
+  }
+
   if (loading) {
     return <div className="loading"><div className="spinner"></div></div>
   }
@@ -59,7 +70,7 @@ function Coutumes() {
                   </span>
                 </td>
                 <td>{coutume.description}</td>
-                <td>{new Date(coutume.date_creation).toLocaleDateString('fr-FR')}</td>
+                <td>{formatDate(coutume.created_at)}</td>
               </tr>
             ))}
           </tbody>

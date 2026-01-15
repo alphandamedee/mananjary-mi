@@ -1,0 +1,273 @@
+/* Family Tree Styles */
+.family-tree {
+  overflow-x: auto;
+  padding: 40px 20px;
+  min-height: 400px;
+}
+
+/* Complete Tree Layout */
+.complete-tree {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+}
+
+.generation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.generation h3 {
+  color: #4a90e2;
+  font-size: 18px;
+  margin: 0;
+  padding: 8px 20px;
+  background: #f0f7ff;
+  border-radius: 20px;
+  border: 2px solid #4a90e2;
+}
+
+.generation-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.current-user-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.grandchildren {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  padding-left: 20px;
+  border-left: 3px solid #4a90e2;
+}
+
+/* Current Generation Styling */
+.current-generation {
+  background: linear-gradient(to bottom, transparent 0%, #f0f7ff 50%, transparent 100%);
+  padding: 30px 20px;
+  border-radius: 15px;
+}
+
+.parents-generation::after {
+  content: '';
+  width: 2px;
+  height: 30px;
+  background: linear-gradient(to bottom, #4a90e2, transparent);
+  margin: 0 auto;
+}
+
+.current-generation::after {
+  content: '';
+  width: 2px;
+  height: 30px;
+  background: linear-gradient(to bottom, #4a90e2, transparent);
+  margin: 0 auto;
+}
+
+/* Tree Node Card */
+.tree-node {
+  display: inline-block;
+  margin: 0 auto;
+}
+
+.node-card {
+  border: 2px solid #4a90e2;
+  border-radius: 10px;
+  padding: 15px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  min-width: 150px;
+  cursor: pointer;
+  position: relative;
+}
+
+.node-card.current-user {
+  border: 3px solid #e74c3c;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
+.current-badge {
+  display: inline-block;
+  background: #e74c3c;
+  color: white;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 5px;
+  font-weight: bold;
+}
+
+.node-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+  border-color: #357abd;
+}
+
+.node-avatar {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #4a90e2;
+}
+
+.node-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-size: 30px;
+}
+
+.node-info {
+  text-align: center;
+}
+
+.node-name {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 5px;
+  color: 40px;
+  height: 3px;
+  background: linear-gradient(to right, #e74c3c, #c0392b);
+  position: relative;
+  box-shadow: 0 2px 5px rgba(231, 76, 60, 0.3);
+}
+
+.marriage-line::before {
+  content: '❤️';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  background: white;
+  padding: 2px 5px;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.marriage-line {
+  width: 30px;
+  height: 2px;
+  background: #e74c3c;
+  position: relative;
+}
+
+.marriage-line::before {
+  content: '❤️';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  background: white;
+  padding: 0 5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .family-tree {
+    transform: scale(0.8);
+    transform-origin: top left;
+  }
+  
+  .node-card {
+    min-width: 120px;
+    padding: 10px;
+  }
+  
+  .node-avatar {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+/* Loading spinner */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4a90e2;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Button styles */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s;
+  background: #e0e0e0;
+  color: #333;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+  background: #4a90e2;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #357abd;
+}
+
+.btn-success {
+  background: #27ae60;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #229954;
+}
+
+/* Card */
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}

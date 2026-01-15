@@ -16,6 +16,7 @@ function Register() {
     telephone: '',
     mot_de_passe: '',
     confirmPassword: '',
+    genre: 'H',
     date_naissance: '',
     adresse: '',
     id_tragnobe: '',
@@ -118,6 +119,20 @@ function Register() {
                 required
               />
             </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="genre">Genre *</label>
+            <select
+              id="genre"
+              name="genre"
+              value={formData.genre}
+              onChange={handleChange}
+              required
+            >
+              <option value="H">Homme</option>
+              <option value="F">Femme</option>
+            </select>
           </div>
 
           <div className="form-group">

@@ -10,6 +10,8 @@ import Dons from '../components/Dashboard/Dons'
 import Evenements from '../components/Dashboard/Evenements'
 import Coutumes from '../components/Dashboard/Coutumes'
 import Logs from '../components/Dashboard/Logs'
+import Lohantragno from '../components/Dashboard/Lohantragno'
+import Relations from '../components/Dashboard/Relations'
 import Profile from '../components/Dashboard/Profile'
 import './Dashboard.css'
 
@@ -49,7 +51,7 @@ function Dashboard() {
                   <img src={getPhotoUrl(user.photo)} alt={user.prenom} />
                 ) : (
                   <div className="avatar-placeholder-small">
-                    {user?.prenom?.[0]}{user?.nom?.[0]}
+                    👤
                   </div>
                 )}
               </div>
@@ -74,7 +76,9 @@ function Dashboard() {
           <Routes>
             <Route path="/" element={<DashboardHome />} />
             <Route path="/tragnobes" element={<Tragnobes />} />
+            <Route path="/lohantragno" element={<Lohantragno />} />
             <Route path="/members" element={<Members />} />
+            <Route path="/relations" element={<Relations />} />
             <Route path="/cotisations" element={<Cotisations />} />
             <Route path="/dons" element={<Dons />} />
             <Route path="/evenements" element={<Evenements />} />

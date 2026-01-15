@@ -1,9 +1,9 @@
-import { useState, useEffect, useContext } from 'react'
+import { useState, useEffect } from 'react'
 import api from '../../services/api'
-import { AuthContext } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
 
 function Members() {
-  const { user } = useContext(AuthContext)
+  const { user } = useAuth()
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -91,6 +91,17 @@ function Members() {
       rejete: 'badge-danger',
     }
     return badges[status] || 'badge-warning'
+  }
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-'
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return '-'
+      return date.toLocaleDateString('fr-FR')
+    } catch {
+      return '-'
+    }
   }
 
   const handleInputChange = (e) => {
@@ -297,10 +308,11 @@ function Members() {
         </div>
       )}
 
-      <div className="card"
+      <div className="card">
         <table className="table">
           <thead>
             <tr>
+              <th>Photo</th>
               <th>Nom</th>
               <th>Prénom</th>
               <th>Email</th>
@@ -313,6 +325,34 @@ function Members() {
           <tbody>
             {members.map((member) => (
               <tr key={member.id}>
+                <td>
+                  {member.photo_profil ? (
+                    <img 
+                      src={`http://localhost:8000${member.photo_profil}`} 
+                      alt={`${member.prenom} ${member.nom}`}
+                      style={{ 
+                        width: '40px', 
+                        height: '40px', 
+                        borderRadius: '50%', 
+                        objectFit: 'cover' 
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      backgroundColor: '#e0e0e0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '20px',
+                      color: '#666'
+                    }}>
+                      👤
+                    </div>
+                  )}
+                </td>
                 <td>{member.nom}</td>
                 <td>{member.prenom}</td>
                 <td>{member.email}</td>
@@ -322,7 +362,7 @@ function Members() {
                     {member.statut}
                   </span>
                 </td>
-                <td>{new Date(member.date_inscription).toLocaleDateString('fr-FR')}</td>
+                <td>{formatDate(member.created_at)}</td>
                 <td>
                   {member.statut === 'en_attente' && (
                     <div style={{ display: 'flex', gap: '5px' }}>

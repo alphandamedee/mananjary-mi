@@ -5,9 +5,13 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 import bcrypt
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
+
+security = HTTPBearer()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -77,3 +81,33 @@ def decode_access_token(token: str) -> Dict[str, Any]:
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(None)
+) -> Dict[str, Any]:
+    """
+    Get current authenticated user from JWT token
+    
+    Args:
+        credentials: Bearer token credentials
+        db: Database session (optional, for future user validation)
+    
+    Returns:
+        User information from token (user_id, user_type, etc.)
+    
+    Raises:
+        HTTPException: If authentication fails
+    """
+    token = credentials.credentials
+    payload = decode_access_token(token)
+    
+    user_id = payload.get("user_id")
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials"
+        )
+    
+    return payload

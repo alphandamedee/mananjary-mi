@@ -20,6 +20,17 @@ function Cotisations() {
     }
   }
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '-'
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return '-'
+      return date.toLocaleDateString('fr-FR')
+    } catch {
+      return '-'
+    }
+  }
+
   if (loading) {
     return <div className="loading"><div className="spinner"></div></div>
   }
@@ -52,7 +63,7 @@ function Cotisations() {
                   <span className="badge badge-success">{cotisation.type_cotisation}</span>
                 </td>
                 <td>{cotisation.moyen_paiement}</td>
-                <td>{new Date(cotisation.date_paiement).toLocaleDateString('fr-FR')}</td>
+                <td>{formatDate(cotisation.date_cotisation)}</td>
                 <td>{cotisation.notes || '-'}</td>
               </tr>
             ))}

@@ -1,10 +1,11 @@
-import { useState, useEffect, useContext } from 'react'
+import { useState, useEffect } from 'react'
 import api from '../../services/api'
-import { AuthContext } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
 
 function Lohantragno() {
-  const { user } = useContext(AuthContext)
+  const { user } = useAuth()
   const [lohantragnoList, setLohantragnoList] = useState([])
+  const [tragnobeList, setTragnobeList] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
@@ -15,21 +16,31 @@ function Lohantragno() {
   })
 
   useEffect(() => {
+    loadTragnobes()
     if (user?.id_tragnobe) {
-      loadLohantragno()
+      loadLohantragno(user.id_tragnobe)
       setFormData(prev => ({ ...prev, id_tragnobe: user.id_tragnobe }))
     }
   }, [user])
 
-  const loadLohantragno = async () => {
+  const loadTragnobes = async () => {
+    try {
+      const response = await api.get('/tragnobes')
+      setTragnobeList(response.data)
+    } catch (error) {
+      console.error('Error loading tragnobes:', error)
+    }
+  }
+
+  const loadLohantragno = async (tragnobeId) => {
+    if (!tragnobeId) {
+      setLohantragnoList([])
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     try {
-      const tragnobeId = user?.id_tragnobe
-      if (!tragnobeId) {
-        console.error('Admin sans tragnobe')
-        return
-      }
-      
       const response = await api.get(`/lohantragno/by-tragnobe/${tragnobeId}`)
       setLohantragnoList(response.data)
     } catch (error) {
@@ -45,6 +56,11 @@ function Lohantragno() {
       ...prev,
       [name]: value
     }))
+    
+    // Recharger les lohantragno quand le tragnobe change
+    if (name === 'id_tragnobe') {
+      loadLohantragno(value)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -60,12 +76,13 @@ function Lohantragno() {
       
       setShowAddForm(false)
       setEditingId(null)
+      const tragnobeId = user?.id_tragnobe || formData.id_tragnobe
       setFormData({
         nom: '',
         description: '',
-        id_tragnobe: user?.id_tragnobe || null
+        id_tragnobe: tragnobeId
       })
-      loadLohantragno()
+      loadLohantragno(tragnobeId)
     } catch (error) {
       console.error('Error saving lohantragno:', error)
       alert(error.response?.data?.detail || 'Erreur lors de l\'enregistrement')
@@ -90,7 +107,7 @@ function Lohantragno() {
     try {
       await api.delete(`/lohantragno/${id}`)
       alert('Lohantragno supprimé avec succès!')
-      loadLohantragno()
+      loadLohantragno(formData.id_tragnobe)
     } catch (error) {
       console.error('Error deleting lohantragno:', error)
       alert(error.response?.data?.detail || 'Erreur lors de la suppression')
@@ -127,6 +144,30 @@ function Lohantragno() {
         <div className="card" style={{ marginBottom: '20px' }}>
           <h3>{editingId ? 'Modifier le lohantragno' : 'Ajouter un nouveau lohantragno'}</h3>
           <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>Tragnobe *</label>
+              <select
+                name="id_tragnobe"
+                value={formData.id_tragnobe || ''}
+                onChange={handleInputChange}
+                required
+                className="form-control"
+                disabled={user?.user_type === 'admin'}
+              >
+                <option value="">Sélectionner un tragnobe</option>
+                {tragnobeList.map(tragnobe => (
+                  <option key={tragnobe.id} value={tragnobe.id}>
+                    {tragnobe.nom}
+                  </option>
+                ))}
+              </select>
+              {user?.user_type === 'admin' && (
+                <small style={{ color: '#666', marginTop: '5px', display: 'block' }}>
+                  Vous pouvez uniquement ajouter des lohantragno à votre tragnobe
+                </small>
+              )}
+            </div>
+
             <div className="form-group">
               <label>Nom *</label>
               <input
@@ -178,6 +219,7 @@ function Lohantragno() {
             <thead>
               <tr>
                 <th>Nom</th>
+                <th>Tragnobe</th>
                 <th>Description</th>
                 <th>Actions</th>
               </tr>
@@ -186,6 +228,9 @@ function Lohantragno() {
               {lohantragnoList.map((loh) => (
                 <tr key={loh.id}>
                   <td><strong>{loh.nom}</strong></td>
+                  <td>
+                    {tragnobeList.find(t => t.id === loh.id_tragnobe)?.nom || `ID: ${loh.id_tragnobe}`}
+                  </td>
                   <td>{loh.description || '-'}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '5px' }}>

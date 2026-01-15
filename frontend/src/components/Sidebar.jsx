@@ -1,18 +1,30 @@
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import './Sidebar.css'
 
 function Sidebar({ isOpen, toggleSidebar }) {
+  const { user } = useAuth()
+  
   const menuItems = [
-    { path: '/dashboard', label: 'Tableau de bord', icon: '📊' },
-    { path: '/dashboard/profile', label: 'Mon Profil', icon: '👤' },
-    { path: '/dashboard/tragnobes', label: 'Tragnobes', icon: '🏘️' },
-    { path: '/dashboard/members', label: 'Membres', icon: '👥' },
-    { path: '/dashboard/cotisations', label: 'Cotisations', icon: '💰' },
-    { path: '/dashboard/dons', label: 'Dons', icon: '🎁' },
-    { path: '/dashboard/evenements', label: 'Événements', icon: '📅' },
-    { path: '/dashboard/coutumes', label: 'Coutumes', icon: '🎭' },
-    { path: '/dashboard/logs', label: 'Logs', icon: '📋' },
+    { path: '/dashboard', label: 'Tableau de bord', icon: '📊', roles: ['super_admin', 'admin', 'user'] },
+    { path: '/dashboard/profile', label: 'Mon Profil', icon: '👤', roles: ['super_admin', 'admin', 'user'] },
+    { path: '/dashboard/tragnobes', label: 'Tragnobes', icon: '🏘️', roles: ['super_admin'] },
+    { path: '/dashboard/lohantragno', label: 'Lohantragno', icon: '📍', roles: ['super_admin', 'admin'] },
+    { path: '/dashboard/members', label: 'Membres', icon: '👥', roles: ['super_admin', 'admin'] },
+    { path: '/dashboard/relations', label: 'Arbre Généalogique', icon: '🌳', roles: ['super_admin', 'admin', 'user'] },
+    { path: '/dashboard/cotisations', label: 'Cotisations', icon: '💰', roles: ['super_admin', 'admin'] },
+    { path: '/dashboard/dons', label: 'Dons', icon: '🎁', roles: ['super_admin', 'admin'] },
+    { path: '/dashboard/evenements', label: 'Événements', icon: '📅', roles: ['super_admin', 'admin', 'user'] },
+    { path: '/dashboard/coutumes', label: 'Coutumes', icon: '🎭', roles: ['super_admin', 'admin', 'user'] },
+    { path: '/dashboard/logs', label: 'Logs', icon: '📋', roles: ['super_admin', 'admin'] },
   ]
+
+  // Filter menu items based on user role
+  const filteredMenuItems = menuItems.filter(item => {
+    // If user is not loaded yet, show all items (will be filtered after login)
+    if (!user?.user_type) return true
+    return item.roles.includes(user.user_type)
+  })
 
   return (
     <>
@@ -24,7 +36,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
         </div>
 
         <nav className="sidebar-nav">
-          {menuItems.map((item) => (
+          {filteredMenuItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}

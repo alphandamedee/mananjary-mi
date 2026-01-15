@@ -20,6 +20,17 @@ function Evenements() {
     }
   }
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '-'
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return '-'
+      return date.toLocaleDateString('fr-FR')
+    } catch {
+      return '-'
+    }
+  }
+
   if (loading) {
     return <div className="loading"><div className="spinner"></div></div>
   }
@@ -48,7 +59,7 @@ function Evenements() {
               <tr key={event.id}>
                 <td><strong>{event.titre}</strong></td>
                 <td><span className="badge badge-success">{event.type}</span></td>
-                <td>{new Date(event.date_evenement).toLocaleDateString('fr-FR')}</td>
+                <td>{formatDate(event.date_debut)}</td>
                 <td>{event.lieu || '-'}</td>
                 <td>{event.participants_attendus || '-'}</td>
                 <td>{event.description || '-'}</td>
