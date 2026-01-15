@@ -1,5 +1,5 @@
 """
-Antambahoaka Connect - FastAPI Backend
+Mananjary-mi - FastAPI Backend
 Main application entry point
 """
 from fastapi import FastAPI
@@ -45,7 +45,7 @@ app.include_router(api_router, prefix="/api/v1")
 async def root():
     """Root endpoint"""
     return {
-        "message": "Bienvenue sur Antambahoaka Connect API",
+        "message": "Bienvenue sur Mananjary-mi API",
         "version": "1.0.0",
         "docs": "/api/docs"
     }

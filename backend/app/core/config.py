@@ -7,7 +7,7 @@ from typing import List
 
 class Settings(BaseSettings):
     # App
-    APP_NAME: str = "Antambahoaka Connect"
+    APP_NAME: str = "Mananjary-mi"
     APP_ENV: str = "development"
     DEBUG: bool = True
     
@@ -20,8 +20,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
     
     # Email
-    MAIL_FROM: str = "noreply@antambahoaka.mg"
-    MAIL_FROM_NAME: str = "Antambahoaka Connect"
+    MAIL_FROM: str = "noreply@mananjary-mi.mg"
+    MAIL_FROM_NAME: str = "Mananjary-mi"
     SMTP_HOST: str = "localhost"
     SMTP_PORT: int = 1025
     SMTP_USER: str = ""

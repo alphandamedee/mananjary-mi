@@ -104,9 +104,9 @@ function DashboardHome() {
 
       <div className="dashboard-info">
         <div className="card">
-          <h3>🎉 Bienvenue sur Antambahoaka Connect</h3>
+          <h3>🎉 Bienvenue sur Mananjary-mi</h3>
           <p>
-            Plateforme de gestion communautaire pour la diaspora Antambahoaka.
+            Plateforme de gestion communautaire pour Mananjary.
             Gérez les membres, tragnobes, cotisations, dons, événements et coutumes.
           </p>
         </div>

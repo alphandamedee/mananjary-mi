@@ -87,7 +87,7 @@ function Register() {
     <div className="register-container">
       <div className="register-card">
         <div className="register-header">
-          <h1>🏛️ Antambahoaka Connect</h1>
+          <h1>🏛️ Mananjary-mi</h1>
           <p>Créer un nouveau compte membre</p>
         </div>
 

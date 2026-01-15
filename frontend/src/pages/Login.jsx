@@ -42,7 +42,7 @@ function Login() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1>🏛️ Antambahoaka Connect</h1>
+          <h1>🏛️ Mananjary-mi</h1>
           <p>Connectez-vous à votre compte</p>
         </div>
 

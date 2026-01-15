@@ -32,7 +32,7 @@ function Dashboard() {
             <button className="menu-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
               ☰
             </button>
-            <h1>Antambahoaka Connect</h1>
+            <h1>Mananjary-mi</h1>
           </div>
           
           <div className="header-right">

@@ -1,6 +1,6 @@
-# 🏛️ Antambahoaka Connect - Python (FastAPI) + React
+# 🏛️ Mananjary-mi - Python (FastAPI) + React
 
-**Plateforme de gestion communautaire pour la diaspora Antambahoaka**
+**Plateforme de gestion communautaire pour Mananjary**
 
 Version modernisée du projet original Laravel/Vanilla JS migré vers Python FastAPI + React.
 
@@ -44,7 +44,7 @@ Application complète de gestion de communauté avec :
 ## 📁 Structure du projet
 
 ```
-antambahoaka-python-react/
+mananjary-mi/
 ├── backend/                    # API FastAPI
 │   ├── app/
 │   │   ├── api/
@@ -333,6 +333,6 @@ MIT License
 
 ## 👨‍💻 Auteur
 
-Migration Python/React du projet Laravel Antambahoaka Connect
+Migration Python/React du projet Laravel Mananjary-mi
 
 **Date de création** : Janvier 2026
