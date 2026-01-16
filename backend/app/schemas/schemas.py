@@ -17,6 +17,7 @@ from app.models.models import (
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    user_type: str
     user_data: dict
 
 
@@ -57,6 +58,11 @@ class RoleResponse(RoleBase):
 class TragnobeBase(BaseModel):
     nom: str = Field(..., min_length=2, max_length=150)
     localisation: Optional[str] = None
+    ampanjaka: Optional[str] = None  # Chef actuel
+    lefitra: Optional[str] = None  # Adjoint
+    date_debut: Optional[date] = None  # Date de début du règne
+    date_fin: Optional[date] = None  # Date de fin (null si en cours)
+    description: Optional[str] = None
 
 
 class TragnobeCreate(TragnobeBase):
@@ -66,12 +72,40 @@ class TragnobeCreate(TragnobeBase):
 class TragnobeUpdate(BaseModel):
     nom: Optional[str] = None
     localisation: Optional[str] = None
+    ampanjaka: Optional[str] = None
+    lefitra: Optional[str] = None
+    date_debut: Optional[date] = None
+    date_fin: Optional[date] = None
+    description: Optional[str] = None
 
 
 class TragnobeResponse(TragnobeBase):
     id: int
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+
+# ========== HISTORIQUE AMPANJAKA SCHEMAS ==========
+
+class HistoriqueAmpanjakaBase(BaseModel):
+    id_tragnobe: int
+    ampanjaka: str
+    lefitra: Optional[str] = None
+    date_debut: date
+    date_fin: Optional[date] = None
+    raison_fin: Optional[str] = None
+
+
+class HistoriqueAmpanjakaCreate(HistoriqueAmpanjakaBase):
+    pass
+
+
+class HistoriqueAmpanjakaResponse(HistoriqueAmpanjakaBase):
+    id: int
+    created_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True
@@ -97,9 +131,10 @@ class LohantragnoUpdate(BaseModel):
 
 class LohantragnoResponse(LohantragnoBase):
     id: int
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    
+    created_at: datetime
+    updated_at: datetime
+    tragnobe: "TragnobeResponse" 
+
     class Config:
         from_attributes = True
 

@@ -26,6 +26,15 @@ app = FastAPI(
     redoc_url="/api/redoc",
 )
 
+# CORS Configuration - MUST BE FIRST
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Add validation error handler
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -43,24 +52,17 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     print(f"\n{'='*80}")
-    print(f"EXCEPTION CAUGHT: {type(exc).__name__}")
+    print(f"GLOBAL EXCEPTION CAUGHT: {type(exc).__name__}")
+    print(f"URL: {request.method} {request.url}")
+    print(f"Headers: {request.headers}")
     print(f"Message: {exc}")
     print(f"Traceback:")
     traceback.print_exc()
     print(f"{'='*80}\n")
     return JSONResponse(
         status_code=500,
-        content={"detail": f"{type(exc).__name__}: {str(exc)}"}
+        content={"detail": f"An unexpected error occurred: {type(exc).__name__}"}
     )
-
-# CORS Configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Create uploads directory if not exists
 os.makedirs("uploads/photos", exist_ok=True)

@@ -8,6 +8,7 @@ export default function ChangePassword() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [isExpanded, setIsExpanded] = useState(false);
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -87,12 +88,42 @@ export default function ChangePassword() {
 
   return (
     <div className="change-password-container">
-      <h3>Changer le mot de passe</h3>
+      <div 
+        className="change-password-header"
+        onClick={() => setIsExpanded(!isExpanded)}
+        style={{ 
+          cursor: 'pointer',
+          padding: '15px',
+          background: '#f8f9fa',
+          borderRadius: '8px',
+          marginBottom: isExpanded ? '20px' : '0',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          border: '1px solid #dee2e6',
+          transition: 'all 0.3s ease'
+        }}
+      >
+        <h3 style={{ margin: 0, fontSize: '18px', color: '#2c3e50' }}>
+          🔒 Changer le mot de passe
+        </h3>
+        <span style={{ 
+          fontSize: '20px',
+          transition: 'transform 0.3s ease',
+          transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+        }}>
+          ▶
+        </span>
+      </div>
 
-      {message && <div className="alert alert-success">{message}</div>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {isExpanded && (
+        <div className="change-password-content" style={{
+          animation: 'slideDown 0.3s ease-out'
+        }}>
+          {message && <div className="alert alert-success">{message}</div>}
+          {error && <div className="alert alert-error">{error}</div>}
 
-      <form onSubmit={handleSubmit} className="password-form">
+          <form onSubmit={handleSubmit} className="password-form">
         <div className="form-group">
           <label htmlFor="currentPassword">Mot de passe actuel *</label>
           <input
@@ -141,6 +172,8 @@ export default function ChangePassword() {
           {loading ? 'Modification...' : 'Modifier le mot de passe'}
         </button>
       </form>
+        </div>
+      )}
     </div>
   );
 }

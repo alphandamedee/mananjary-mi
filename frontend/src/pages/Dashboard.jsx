@@ -59,7 +59,11 @@ function Dashboard() {
                 <span className="user-name">
                   {user?.prenom ? `${user.prenom} ${user.nom}` : user?.nom}
                 </span>
-                <span className="user-role badge badge-success">
+                <span className={`user-role badge ${
+                  user?.user_type === 'super_admin' ? 'badge-danger' : 
+                  user?.user_type === 'admin' ? 'badge-primary' : 
+                  'badge-success'
+                }`}>
                   {user?.user_type === 'super_admin' && 'Super Admin'}
                   {user?.user_type === 'admin' && 'Admin'}
                   {user?.user_type === 'user' && 'Membre'}

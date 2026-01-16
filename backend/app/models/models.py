@@ -89,12 +89,35 @@ class Tragnobe(Base):
     id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
     nom = Column(String(150), unique=True, nullable=False)
     localisation = Column(String(200))
+    ampanjaka = Column(String(150))  # Chef actuel (anciennement nom_chef)
+    lefitra = Column(String(150))  # Adjoint du chef
+    date_debut = Column(Date)  # Date de début du règne actuel
+    date_fin = Column(Date, nullable=True)  # Date de fin (null si en cours)
+    description = Column(Text)
     created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
     updated_at = Column(TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
     
     # Relationships
     users = relationship("User", back_populates="tragnobe")
     lohantragno = relationship("Lohantragno", back_populates="tragnobe")
+    historique_ampanjaka = relationship("HistoriqueAmpanjaka", back_populates="tragnobe")
+
+
+class HistoriqueAmpanjaka(Base):
+    """Table historique_ampanjaka - Historique des chefs de tragnobe"""
+    __tablename__ = "historique_ampanjaka"
+    
+    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    id_tragnobe = Column(BigInteger, ForeignKey('tragnobes.id'), nullable=False)
+    ampanjaka = Column(String(150), nullable=False)  # Nom du chef
+    lefitra = Column(String(150))  # Adjoint
+    date_debut = Column(Date, nullable=False)  # Date de début du règne
+    date_fin = Column(Date, nullable=True)  # Date de fin (null si en cours)
+    raison_fin = Column(String(255))  # Raison de fin de règne (décès, abdication, etc.)
+    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    
+    # Relationships
+    tragnobe = relationship("Tragnobe", back_populates="historique_ampanjaka")
 
 
 class Lohantragno(Base):

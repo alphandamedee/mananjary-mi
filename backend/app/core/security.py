@@ -7,7 +7,6 @@ from jose import JWTError, jwt
 import bcrypt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
 
 from app.core.config import settings
 
@@ -84,8 +83,7 @@ def decode_access_token(token: str) -> Dict[str, Any]:
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(None)
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> Dict[str, Any]:
     """
     Get current authenticated user from JWT token

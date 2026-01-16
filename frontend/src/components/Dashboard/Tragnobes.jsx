@@ -6,12 +6,16 @@ function Tragnobes() {
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
+  const [showHistorique, setShowHistorique] = useState(null)
+  const [historique, setHistorique] = useState([])
   const [formData, setFormData] = useState({
     nom: '',
-    nom_chef: '',
+    ampanjaka: '',
+    lefitra: '',
     localisation: '',
     description: '',
-    actif: true
+    date_debut: '',
+    date_fin: ''
   })
 
   useEffect(() => {
@@ -29,6 +33,17 @@ function Tragnobes() {
     }
   }
 
+  const loadHistorique = async (tragnobeId) => {
+    try {
+      const response = await api.get(`/tragnobes/${tragnobeId}/historique`)
+      setHistorique(response.data)
+      setShowHistorique(tragnobeId)
+    } catch (error) {
+      console.error('Error loading historique:', error)
+      alert('Erreur lors du chargement de l\'historique')
+    }
+  }
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
     setFormData(prev => ({
@@ -40,11 +55,20 @@ function Tragnobes() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
+      const payload = {
+        ...formData,
+        ampanjaka: formData.ampanjaka || null,
+        lefitra: formData.lefitra || null,
+        localisation: formData.localisation || null,
+        description: formData.description || null,
+        date_debut: formData.date_debut || null,
+        date_fin: formData.date_fin || null,
+      }
       if (editingId) {
-        await api.put(`/tragnobes/${editingId}`, formData)
+        await api.put(`/tragnobes/${editingId}`, payload)
         alert('Tragnobe modifié avec succès!')
       } else {
-        await api.post('/tragnobes/', formData)
+        await api.post('/tragnobes/', payload)
         alert('Tragnobe ajouté avec succès!')
       }
       
@@ -52,10 +76,12 @@ function Tragnobes() {
       setEditingId(null)
       setFormData({
         nom: '',
-        nom_chef: '',
+        ampanjaka: '',
+        lefitra: '',
         localisation: '',
         description: '',
-        actif: true
+        date_debut: '',
+        date_fin: ''
       })
       loadTragnobes()
     } catch (error) {
@@ -68,10 +94,12 @@ function Tragnobes() {
     setEditingId(tragnobe.id)
     setFormData({
       nom: tragnobe.nom,
-      nom_chef: tragnobe.nom_chef || '',
+      ampanjaka: tragnobe.ampanjaka || '',
+      lefitra: tragnobe.lefitra || '',
       localisation: tragnobe.localisation || '',
       description: tragnobe.description || '',
-      actif: tragnobe.actif
+      date_debut: tragnobe.date_debut || '',
+      date_fin: tragnobe.date_fin || ''
     })
     setShowAddForm(true)
   }
@@ -96,10 +124,12 @@ function Tragnobes() {
     setEditingId(null)
     setFormData({
       nom: '',
-      nom_chef: '',
+      ampanjaka: '',
+      lefitra: '',
       localisation: '',
       description: '',
-      actif: true
+      date_debut: '',
+      date_fin: ''
     })
   }
 
@@ -154,14 +184,26 @@ function Tragnobes() {
               </div>
 
               <div className="form-group">
-                <label>Nom du chef</label>
+                <label>Ampanjaka (Chef)</label>
                 <input
                   type="text"
-                  name="nom_chef"
-                  value={formData.nom_chef}
+                  name="ampanjaka"
+                  value={formData.ampanjaka}
                   onChange={handleInputChange}
                   className="form-control"
-                  placeholder="Nom du chef du tragnobe"
+                  placeholder="Nom de l'Ampanjaka"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Lefitra (Adjoint)</label>
+                <input
+                  type="text"
+                  name="lefitra"
+                  value={formData.lefitra}
+                  onChange={handleInputChange}
+                  className="form-control"
+                  placeholder="Nom du Lefitra"
                 />
               </div>
 
@@ -178,17 +220,26 @@ function Tragnobes() {
               </div>
 
               <div className="form-group">
-                <label>Statut</label>
-                <div style={{ display: 'flex', alignItems: 'center', marginTop: '8px' }}>
-                  <input
-                    type="checkbox"
-                    name="actif"
-                    checked={formData.actif}
-                    onChange={handleInputChange}
-                    style={{ marginRight: '8px', width: 'auto' }}
-                  />
-                  <span>Actif</span>
-                </div>
+                <label>Date début règne</label>
+                <input
+                  type="date"
+                  name="date_debut"
+                  value={formData.date_debut}
+                  onChange={handleInputChange}
+                  className="form-control"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Date fin règne</label>
+                <input
+                  type="date"
+                  name="date_fin"
+                  value={formData.date_fin}
+                  onChange={handleInputChange}
+                  className="form-control"
+                />
+                <small style={{ color: '#777' }}>Laisser vide si en cours</small>
               </div>
 
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
@@ -230,10 +281,10 @@ function Tragnobes() {
             <thead>
               <tr>
                 <th>Nom</th>
-                <th>Chef</th>
+                <th>Ampanjaka</th>
+                <th>Lefitra</th>
                 <th>Localisation</th>
-                <th>Description</th>
-                <th>Statut</th>
+                <th>Période règne</th>
                 <th>Date de création</th>
                 <th>Actions</th>
               </tr>
@@ -242,23 +293,37 @@ function Tragnobes() {
               {tragnobes.map((tragnobe) => (
                 <tr key={tragnobe.id}>
                   <td><strong>{tragnobe.nom}</strong></td>
-                  <td>{tragnobe.nom_chef || '-'}</td>
+                  <td>{tragnobe.ampanjaka || '-'}</td>
+                  <td>{tragnobe.lefitra || '-'}</td>
                   <td>{tragnobe.localisation || '-'}</td>
-                  <td>{tragnobe.description || '-'}</td>
                   <td>
-                    <span className={`badge ${tragnobe.actif ? 'badge-success' : 'badge-danger'}`}>
-                      {tragnobe.actif ? 'Actif' : 'Inactif'}
-                    </span>
+                    {tragnobe.date_debut ? (
+                      <>
+                        {formatDate(tragnobe.date_debut)}
+                        {tragnobe.date_fin ? (
+                          <> → {formatDate(tragnobe.date_fin)}</>
+                        ) : (
+                          <span style={{ color: 'green', fontWeight: 'bold' }}> → En cours</span>
+                        )}
+                      </>
+                    ) : '-'}
                   </td>
                   <td>{formatDate(tragnobe.created_at)}</td>
                   <td>
-                    <div style={{ display: 'flex', gap: '5px' }}>
+                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                       <button
                         className="btn btn-primary"
                         style={{ padding: '5px 10px', fontSize: '12px' }}
                         onClick={() => handleEdit(tragnobe)}
                       >
                         ✏️ Modifier
+                      </button>
+                      <button
+                        className="btn btn-info"
+                        style={{ padding: '5px 10px', fontSize: '12px', backgroundColor: '#17a2b8', color: 'white' }}
+                        onClick={() => loadHistorique(tragnobe.id)}
+                      >
+                        📜 Historique
                       </button>
                       <button
                         className="btn btn-danger"
@@ -275,6 +340,69 @@ function Tragnobes() {
           </table>
         )}
       </div>
+
+      {/* Modal Historique */}
+      {showHistorique && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div className="card" style={{ 
+            maxWidth: '800px', 
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3>📜 Historique des Ampanjaka</h3>
+              <button
+                className="btn"
+                onClick={() => setShowHistorique(null)}
+                style={{ padding: '5px 15px' }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            {historique.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#999', padding: '20px' }}>
+                Aucun historique disponible
+              </p>
+            ) : (
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Ampanjaka</th>
+                    <th>Lefitra</th>
+                    <th>Date début</th>
+                    <th>Date fin</th>
+                    <th>Raison fin</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historique.map((h) => (
+                    <tr key={h.id}>
+                      <td><strong>{h.ampanjaka}</strong></td>
+                      <td>{h.lefitra || '-'}</td>
+                      <td>{formatDate(h.date_debut)}</td>
+                      <td>{h.date_fin ? formatDate(h.date_fin) : <span style={{ color: 'green' }}>En cours</span>}</td>
+                      <td>{h.raison_fin || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

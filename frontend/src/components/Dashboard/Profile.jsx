@@ -170,29 +170,73 @@ export default function Profile() {
   const handleRelationSubmit = async (e) => {
     e.preventDefault();
     try {
+      const currentUserId = parseInt(user?.id);
+      const selectedUserId = parseInt(relationFormData.id_user2);
+
+      // Validation
+      if (!selectedUserId || isNaN(selectedUserId)) {
+        setError('Veuillez sélectionner une personne');
+        return;
+      }
+
+      if (!currentUserId || isNaN(currentUserId)) {
+        setError('Erreur: utilisateur non connecté');
+        return;
+      }
+
+      // Trouver les utilisateurs concernés
+      const currentUserData = users.find(u => u.id === currentUserId);
+      const selectedUserData = users.find(u => u.id === selectedUserId);
+
+      // Validation de l'âge pour les relations parent-enfant
+      if (relationType === 'parent') {
+        // Le parent (selectedUser) doit être plus âgé que l'enfant (currentUser)
+        if (selectedUserData?.annee_naissance && currentUserData?.annee_naissance) {
+          if (selectedUserData.annee_naissance >= currentUserData.annee_naissance) {
+            setError(`${selectedUserData.prenom} ${selectedUserData.nom} ne peut pas être votre parent car il/elle est né(e) en ${selectedUserData.annee_naissance}, vous êtes né(e) en ${currentUserData.annee_naissance}`);
+            return;
+          }
+        }
+      } else if (relationType === 'child') {
+        // L'enfant (selectedUser) doit être plus jeune que le parent (currentUser)
+        if (selectedUserData?.annee_naissance && currentUserData?.annee_naissance) {
+          if (selectedUserData.annee_naissance <= currentUserData.annee_naissance) {
+            setError(`${selectedUserData.prenom} ${selectedUserData.nom} ne peut pas être votre enfant car il/elle est né(e) en ${selectedUserData.annee_naissance}, vous êtes né(e) en ${currentUserData.annee_naissance}`);
+            return;
+          }
+        }
+      }
+
       let dataToSend = {};
-      const currentUserId = user?.user_id;
 
       if (relationType === 'parent') {
+        // Le parent sélectionné est user1, l'utilisateur courant est user2
         dataToSend = {
-          id_user1: parseInt(relationFormData.id_user2),
+          id_user1: selectedUserId,
           id_user2: currentUserId,
           type_relation: relationFormData.type_relation
         };
       } else if (relationType === 'child') {
+        // L'utilisateur courant est user1 (parent), l'enfant sélectionné est user2
         dataToSend = {
-          id_user1: parseInt(relationFormData.id_user2),
-          id_user2: currentUserId,
+          id_user1: currentUserId,
+          id_user2: selectedUserId,
           type_relation: relationFormData.type_relation
         };
       } else if (relationType === 'spouse') {
+        // Pour le conjoint, l'utilisateur courant est user1
         dataToSend = {
           id_user1: currentUserId,
-          id_user2: parseInt(relationFormData.id_user2),
+          id_user2: selectedUserId,
           type_relation: relationFormData.type_relation
         };
       }
 
+      console.log('Sending relation data:', dataToSend);
+      console.log('Type of id_user1:', typeof dataToSend.id_user1, 'Value:', dataToSend.id_user1);
+      console.log('Type of id_user2:', typeof dataToSend.id_user2, 'Value:', dataToSend.id_user2);
+      console.log('Type of type_relation:', typeof dataToSend.type_relation, 'Value:', dataToSend.type_relation);
+      
       await api.post('/relations/', dataToSend);
       setMessage('Relation ajoutée avec succès!');
       setShowAddRelation(false);
@@ -204,7 +248,14 @@ export default function Profile() {
       setRelations(relationsRes.data);
     } catch (err) {
       console.error('Error creating relation:', err);
-      setError(err.response?.data?.detail || 'Erreur lors de l\'ajout de la relation');
+      const errorMsg = err.response?.data?.detail;
+      if (typeof errorMsg === 'string') {
+        setError(errorMsg);
+      } else if (Array.isArray(errorMsg)) {
+        setError(errorMsg.map(e => e.msg || e).join(', '));
+      } else {
+        setError('Erreur lors de l\'ajout de la relation');
+      }
     }
   };
 

@@ -17,8 +17,11 @@ function Relations() {
   const loadData = async () => {
     setLoading(true)
     try {
+      const relationsRequest = user?.id
+        ? api.get(`/relations/user/${user.id}`)
+        : api.get('/relations')
       const [relationsRes, usersRes] = await Promise.all([
-        api.get('/relations'),
+        relationsRequest,
         api.get('/users')
       ])
       setRelations(relationsRes.data)
@@ -64,80 +67,108 @@ function Relations() {
 
   // Build family tree structure centered on current user
   const buildFamilyTree = () => {
+    const currentUserId = user?.id
+    if (!currentUserId) {
+      return { userMap: {}, rootUser: null, currentUserId: null, visibleRelations: [] }
+    }
+
+    const relationsByUser = new Map()
+    relations.forEach(rel => {
+      if (!relationsByUser.has(rel.id_user1)) relationsByUser.set(rel.id_user1, [])
+      if (!relationsByUser.has(rel.id_user2)) relationsByUser.set(rel.id_user2, [])
+      relationsByUser.get(rel.id_user1).push(rel)
+      relationsByUser.get(rel.id_user2).push(rel)
+    })
+
+    const connectedUserIds = new Set([currentUserId])
+    const queue = [currentUserId]
+    while (queue.length) {
+      const userId = queue.shift()
+      const rels = relationsByUser.get(userId) || []
+      rels.forEach(rel => {
+        const otherId = rel.id_user1 === userId ? rel.id_user2 : rel.id_user1
+        if (!connectedUserIds.has(otherId)) {
+          connectedUserIds.add(otherId)
+          queue.push(otherId)
+        }
+      })
+    }
+
+    const visibleRelations = relations.filter(
+      rel => connectedUserIds.has(rel.id_user1) && connectedUserIds.has(rel.id_user2)
+    )
+
     const userMap = {}
-    
-    // Create user map
     users.forEach(u => {
-      userMap[u.id] = {
-        ...u,
-        parents: [],
-        children: [],
-        spouse: null,
-        siblings: []
+      if (connectedUserIds.has(u.id)) {
+        userMap[u.id] = {
+          ...u,
+          parents: [],
+          children: [],
+          spouse: null,
+          siblings: []
+        }
       }
     })
 
-    // Process relations
-    relations.forEach(rel => {
+    const addUnique = (list, item) => {
+      if (!list.find(i => i.id === item.id)) {
+        list.push(item)
+      }
+    }
+
+    visibleRelations.forEach(rel => {
       const user1 = userMap[rel.id_user1]
       const user2 = userMap[rel.id_user2]
-      
       if (!user1 || !user2) return
 
-      switch(rel.type_relation) {
+      switch (rel.type_relation) {
         case 'pere':
         case 'mere':
-          user2.parents.push(user1)
-          user1.children.push(user2)
-          break
         case 'fils':
         case 'fille':
-          user1.parents.push(user2)
-          user2.children.push(user1)
+          addUnique(user2.parents, user1)
+          addUnique(user1.children, user2)
           break
         case 'epoux':
         case 'epouse':
-          user1.spouse = user2
-          user2.spouse = user1
+          user1.spouse = user1.spouse || user2
+          user2.spouse = user2.spouse || user1
           break
       }
     })
 
-    // Find siblings (people who share the same parents)
     Object.values(userMap).forEach(u => {
       if (u.parents.length > 0) {
-        u.parents[0].children.forEach(child => {
-          if (child.id !== u.id && !u.siblings.find(s => s.id === child.id)) {
-            u.siblings.push(child)
-          }
+        const parentIds = new Set(u.parents.map(p => p.id))
+        Object.values(userMap).forEach(other => {
+          if (other.id === u.id || other.parents.length === 0) return
+          const sharesParent = other.parents.some(p => parentIds.has(p.id))
+          if (sharesParent) addUnique(u.siblings, other)
         })
       }
     })
 
-    // Find current user or use first user
-    const currentUserId = user?.user_id
-    let rootUser = currentUserId ? userMap[currentUserId] : null
-    
-    // If current user not found, try to find any user with relations
-    if (!rootUser) {
-      rootUser = Object.values(userMap).find(u => 
-        u.parents.length > 0 || u.children.length > 0 || u.spouse
-      )
-    }
-    
-    return { userMap, rootUser, currentUserId }
+    const rootUser = userMap[currentUserId] || null
+    return { userMap, rootUser, currentUserId, visibleRelations }
   }
 
   const renderUserCard = (userId, isCurrent = false) => {
     const u = users.find(user => user.id === userId)
     if (!u) return null
 
+    const getPhotoUrl = (photo) => {
+      if (!photo) return null
+      if (photo.startsWith('http')) return photo
+      return `http://localhost:8000${photo.startsWith('/') ? photo : '/' + photo}`
+    }
+
     return (
       <div className="tree-node">
         <div className={`node-card ${isCurrent ? 'current-user' : ''}`}>
           <div className="node-avatar">
             {u.photo ? (
-              <img src={`http://localhost:8000${u.photo}`} alt={u.prenom} />
+              <img src={getPhotoUrl(u.photo)} alt={u.prenom} />
             ) : (
               <div className="avatar-placeholder">👤</div>
             )}
@@ -229,7 +260,7 @@ function Relations() {
     return <div className="loading"><div className="spinner"></div></div>
   }
 
-  const { userMap, rootUser, currentUserId } = buildFamilyTree()
+  const { userMap, rootUser, currentUserId, visibleRelations } = buildFamilyTree()
 
   return (
     <div>
@@ -258,9 +289,13 @@ function Relations() {
 
       {viewMode === 'tree' ? (
         <div className="card">
-          {!rootUser ? (
+          {!currentUserId ? (
             <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-              Aucune relation trouvée. Ajoutez vos relations familiales depuis votre profil.
+              Connectez-vous pour afficher votre arbre généalogique.
+            </div>
+          ) : !rootUser ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+              Aucune relation trouvée pour votre compte. Ajoutez vos relations familiales depuis votre profil.
             </div>
           ) : (
             <div className="family-tree">
@@ -270,7 +305,7 @@ function Relations() {
         </div>
       ) : (
         <div className="card">
-        {relations.length === 0 ? (
+        {visibleRelations.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
             Aucune relation trouvée.
           </div>
@@ -285,7 +320,7 @@ function Relations() {
               </tr>
             </thead>
             <tbody>
-              {relations.map((relation) => (
+              {visibleRelations.map((relation) => (
                 <tr key={relation.id}>
                   <td><strong>{getUserName(relation.id_user1)}</strong></td>
                   <td>

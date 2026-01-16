@@ -17,8 +17,11 @@ function Lohantragno() {
 
   useEffect(() => {
     loadTragnobes()
-    if (user?.id_tragnobe) {
-      loadLohantragno(user.id_tragnobe)
+    // Super admin et admin peuvent voir tous les lohantragno
+    if (user?.user_type === 'super_admin') {
+      loadAllLohantragno()
+    } else if (user?.user_type === 'admin' && user?.id_tragnobe) {
+      loadAllLohantragno() // Admin peut voir tous les lohantragno
       setFormData(prev => ({ ...prev, id_tragnobe: user.id_tragnobe }))
     }
   }, [user])
@@ -29,6 +32,19 @@ function Lohantragno() {
       setTragnobeList(response.data)
     } catch (error) {
       console.error('Error loading tragnobes:', error)
+    }
+  }
+
+  const loadAllLohantragno = async () => {
+    setLoading(true)
+    try {
+      const response = await api.get('/lohantragno/')
+      setLohantragnoList(response.data)
+    } catch (error) {
+      console.error('Error loading all lohantragno:', error)
+      alert(error.response?.data?.detail || 'Erreur lors du chargement des lohantragno')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -56,11 +72,6 @@ function Lohantragno() {
       ...prev,
       [name]: value
     }))
-    
-    // Recharger les lohantragno quand le tragnobe change
-    if (name === 'id_tragnobe') {
-      loadLohantragno(value)
-    }
   }
 
   const handleSubmit = async (e) => {
@@ -76,13 +87,17 @@ function Lohantragno() {
       
       setShowAddForm(false)
       setEditingId(null)
-      const tragnobeId = user?.id_tragnobe || formData.id_tragnobe
+      
+      // Réinitialiser le formulaire
+      const defaultTragnobeId = user?.user_type === 'admin' ? user.id_tragnobe : null
       setFormData({
         nom: '',
         description: '',
-        id_tragnobe: tragnobeId
+        id_tragnobe: defaultTragnobeId
       })
-      loadLohantragno(tragnobeId)
+      
+      // Recharger tous les lohantragno
+      loadAllLohantragno()
     } catch (error) {
       console.error('Error saving lohantragno:', error)
       alert(error.response?.data?.detail || 'Erreur lors de l\'enregistrement')
@@ -107,7 +122,7 @@ function Lohantragno() {
     try {
       await api.delete(`/lohantragno/${id}`)
       alert('Lohantragno supprimé avec succès!')
-      loadLohantragno(formData.id_tragnobe)
+      loadAllLohantragno()
     } catch (error) {
       console.error('Error deleting lohantragno:', error)
       alert(error.response?.data?.detail || 'Erreur lors de la suppression')
@@ -117,10 +132,11 @@ function Lohantragno() {
   const handleCancel = () => {
     setShowAddForm(false)
     setEditingId(null)
+    const defaultTragnobeId = user?.user_type === 'admin' ? user.id_tragnobe : null
     setFormData({
       nom: '',
       description: '',
-      id_tragnobe: user?.id_tragnobe || null
+      id_tragnobe: defaultTragnobeId
     })
   }
 
@@ -155,15 +171,26 @@ function Lohantragno() {
                 disabled={user?.user_type === 'admin'}
               >
                 <option value="">Sélectionner un tragnobe</option>
-                {tragnobeList.map(tragnobe => (
-                  <option key={tragnobe.id} value={tragnobe.id}>
-                    {tragnobe.nom}
-                  </option>
-                ))}
+                {tragnobeList.map(tragnobe => {
+                  // Admin peut seulement voir son propre tragnobe dans la liste
+                  if (user?.user_type === 'admin' && tragnobe.id !== user.id_tragnobe) {
+                    return null
+                  }
+                  return (
+                    <option key={tragnobe.id} value={tragnobe.id}>
+                      {tragnobe.nom}
+                    </option>
+                  )
+                })}
               </select>
               {user?.user_type === 'admin' && (
                 <small style={{ color: '#666', marginTop: '5px', display: 'block' }}>
-                  Vous pouvez uniquement ajouter des lohantragno à votre tragnobe
+                  Vous pouvez uniquement ajouter des lohantragno à votre tragnobe : {tragnobeList.find(t => t.id === user.id_tragnobe)?.nom}
+                </small>
+              )}
+              {user?.user_type === 'super_admin' && (
+                <small style={{ color: '#4a90e2', marginTop: '5px', display: 'block' }}>
+                  En tant que super admin, vous pouvez ajouter des lohantragno à n'importe quel tragnobe
                 </small>
               )}
             </div>
@@ -234,20 +261,50 @@ function Lohantragno() {
                   <td>{loh.description || '-'}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '5px' }}>
-                      <button
-                        className="btn btn-primary"
-                        style={{ padding: '5px 10px', fontSize: '12px' }}
-                        onClick={() => handleEdit(loh)}
-                      >
-                        ✏️ Modifier
-                      </button>
-                      <button
-                        className="btn btn-danger"
-                        style={{ padding: '5px 10px', fontSize: '12px' }}
-                        onClick={() => handleDelete(loh.id)}
-                      >
-                        🗑️ Supprimer
-                      </button>
+                      {/* Super admin peut tout modifier */}
+                      {user?.user_type === 'super_admin' && (
+                        <>
+                          <button
+                            className="btn btn-primary"
+                            style={{ padding: '5px 10px', fontSize: '12px' }}
+                            onClick={() => handleEdit(loh)}
+                          >
+                            ✏️ Modifier
+                          </button>
+                          <button
+                            className="btn btn-danger"
+                            style={{ padding: '5px 10px', fontSize: '12px' }}
+                            onClick={() => handleDelete(loh.id)}
+                          >
+                            🗑️ Supprimer
+                          </button>
+                        </>
+                      )}
+                      {/* Admin peut modifier seulement son tragnobe */}
+                      {user?.user_type === 'admin' && loh.id_tragnobe === user.id_tragnobe && (
+                        <>
+                          <button
+                            className="btn btn-primary"
+                            style={{ padding: '5px 10px', fontSize: '12px' }}
+                            onClick={() => handleEdit(loh)}
+                          >
+                            ✏️ Modifier
+                          </button>
+                          <button
+                            className="btn btn-danger"
+                            style={{ padding: '5px 10px', fontSize: '12px' }}
+                            onClick={() => handleDelete(loh.id)}
+                          >
+                            🗑️ Supprimer
+                          </button>
+                        </>
+                      )}
+                      {/* Admin ne peut pas modifier les autres tragnobes */}
+                      {user?.user_type === 'admin' && loh.id_tragnobe !== user.id_tragnobe && (
+                        <span style={{ color: '#999', fontSize: '12px', fontStyle: 'italic' }}>
+                          Lecture seule
+                        </span>
+                      )}
                     </div>
                   </td>
                 </tr>

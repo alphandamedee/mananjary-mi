@@ -50,19 +50,23 @@ async def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     role = db.query(Role).filter(Role.id == user.id_role).first()
     role_name = role.nom if role else "Membre"
     
-    # Determine actor type for logging
+    # Determine actor type for logging and user_type for frontend
     actor_type = ActorTypeEnum.user
+    user_type = "user"
     if user.id_role == 1:  # Super Admin
         actor_type = ActorTypeEnum.super_admin
+        user_type = "super_admin"
     elif user.id_role == 2:  # Admin
         actor_type = ActorTypeEnum.admin
+        user_type = "admin"
     
     # Create access token
     token_data = {
         "user_id": user.id,
         "email": user.email,
         "role_id": user.id_role,
-        "role_name": role_name
+        "role_name": role_name,
+        "user_type": user_type
     }
     access_token = create_access_token(token_data)
     
@@ -79,6 +83,7 @@ async def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     return {
         "access_token": access_token,
         "token_type": "bearer",
+        "user_type": user_type,
         "user_data": {
             "id": user.id,
             "nom": user.nom,
@@ -86,6 +91,7 @@ async def login(credentials: LoginRequest, db: Session = Depends(get_db)):
             "email": user.email,
             "role_id": user.id_role,
             "role_name": role_name,
+            "user_type": user_type,
             "id_tragnobe": user.id_tragnobe,
             "id_lohantragno": user.id_lohantragno,
             "photo": user.photo,
