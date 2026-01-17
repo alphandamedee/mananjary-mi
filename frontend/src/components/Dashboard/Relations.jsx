@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
+import Tree from 'react-d3-tree'
 import './Relations.css'
+import defaultAvatar from '../../img/profil homme.jpg'
 
 function Relations() {
   const { user } = useAuth()
@@ -9,17 +11,33 @@ function Relations() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState('tree') // 'tree' or 'table'
+  const treeWrapperRef = useRef(null)
+  const [treeTranslate, setTreeTranslate] = useState({ x: 0, y: 0 })
+  const [selectedUserId, setSelectedUserId] = useState(null)
 
   useEffect(() => {
     loadData()
   }, [])
 
+  // Debug : log users, relations, sélection admin
+  useEffect(() => {
+    console.log('--- DEBUG Relations.jsx ---')
+    console.log('user:', user)
+    console.log('selectedUserId:', selectedUserId)
+    console.log('users:', users)
+    console.log('relations:', relations)
+  }, [user, selectedUserId, users, relations])
+
   const loadData = async () => {
     setLoading(true)
     try {
-      const relationsRequest = user?.id
-        ? api.get(`/relations/user/${user.id}`)
-        : api.get('/relations')
+      const isAdmin = (user?.user_type && String(user.user_type).toLowerCase().includes('admin')) ||
+                     (user?.role_name && String(user.role_name).toLowerCase().includes('admin'));
+      const relationsRequest = isAdmin
+        ? api.get('/relations')
+        : user?.id
+          ? api.get(`/relations/user/${user.id}`)
+          : api.get('/relations');
       const [relationsRes, usersRes] = await Promise.all([
         relationsRequest,
         api.get('/users')
@@ -65,9 +83,13 @@ function Relations() {
     return labels[type] || type
   }
 
-  // Build family tree structure centered on current user
+  // Build family tree structure centered on current user ou sélection admin
   const buildFamilyTree = () => {
-    const currentUserId = user?.id
+    // Détection admin robuste
+    const isAdmin = (user?.user_type && String(user.user_type).toLowerCase().includes('admin')) ||
+                   (user?.role_name && String(user.role_name).toLowerCase().includes('admin'));
+    // Si admin et sélection, utiliser selectedUserId, sinon user.id
+    const currentUserId = isAdmin && selectedUserId ? selectedUserId : user?.id;
     if (!currentUserId) {
       return { userMap: {}, rootUser: null, currentUserId: null, visibleRelations: [] }
     }
@@ -153,35 +175,140 @@ function Relations() {
     return { userMap, rootUser, currentUserId, visibleRelations }
   }
 
-  const renderUserCard = (userId, isCurrent = false) => {
-    const u = users.find(user => user.id === userId)
-    if (!u) return null
+  const getPhotoUrl = (photo) => {
+    if (!photo) return defaultAvatar
+    if (photo.startsWith('http')) return photo
+    return `http://localhost:8000${photo.startsWith('/') ? photo : '/' + photo}`
+  }
 
-    const getPhotoUrl = (photo) => {
-      if (!photo) return null
-      if (photo.startsWith('http')) return photo
-      return `http://localhost:8000${photo.startsWith('/') ? photo : '/' + photo}`
+  const getAge = (birthYear) => {
+    const year = parseInt(birthYear, 10)
+    if (!year || Number.isNaN(year)) return null
+    const currentYear = new Date().getFullYear()
+    const age = currentYear - year
+    return age > 0 ? age : null
+  }
+
+  const buildTreeData = (rootUser) => {
+    if (!rootUser) return null
+
+    const toPersonNode = (u) => ({
+      name: `${u.prenom} ${u.nom}`,
+      attributes: {
+        genre: u.genre,
+        age: getAge(u.annee_naissance),
+        photo: getPhotoUrl(u.photo) || defaultAvatar
+      }
+    })
+
+    const makeGroupNode = (label, list) => {
+      if (!list || list.length === 0) return null
+      return {
+        name: label,
+        attributes: { group: true },
+        children: list.map(toPersonNode)
+      }
     }
 
+    const nodes = [
+      makeGroupNode('Parents', rootUser.parents),
+      makeGroupNode('Frères/Sœurs', rootUser.siblings),
+      rootUser.spouse
+        ? { name: 'Conjoint(e)', attributes: { group: true }, children: [toPersonNode(rootUser.spouse)] }
+        : null,
+      makeGroupNode('Enfants', rootUser.children)
+    ].filter(Boolean)
+
+    return {
+      name: `${rootUser.prenom} ${rootUser.nom}`,
+      attributes: {
+        genre: rootUser.genre,
+        age: getAge(rootUser.annee_naissance),
+        photo: getPhotoUrl(rootUser.photo) || defaultAvatar
+      },
+      children: nodes
+    }
+  }
+
+  const renderCustomNode = ({ nodeDatum }) => {
+    if (nodeDatum.attributes?.group) {
+      // Emoji contextuel selon le groupe
+      let emoji = '';
+      if (/parent/i.test(nodeDatum.name)) emoji = '👨‍👩‍👧‍👦';
+      else if (/enfant/i.test(nodeDatum.name)) emoji = '👶';
+      else if (/conjoint|époux|épouse/i.test(nodeDatum.name)) emoji = '💍';
+      else emoji = '👥';
+      return (
+        <g className="d3-group-node">
+          <rect
+            x="-70" y="-18" width="140" height="36" rx="20"
+            fill="url(#d3-group-bg)"
+            filter="url(#d3-group-rect-shadow)"
+            style={{ backdropFilter: 'blur(7px)', opacity: 0.92, stroke: 'rgba(123,31,162,0.25)', strokeWidth: 2 }}
+          />
+          <text
+            className="d3-group-label neon-glow"
+            dy="8"
+            textAnchor="middle"
+            stroke="#fff"
+            strokeWidth="2.5"
+            paintOrder="stroke"
+            filter="url(#d3-group-shadow)"
+            fill="url(#d3-group-gradient-anim)"
+          >
+            <tspan fontSize="20">{emoji} </tspan>{nodeDatum.name}
+          </text>
+          {/* Définition du filtre ombre portée SVG, du dégradé animé texte et du fond glassy */}
+          <defs>
+            <linearGradient id="d3-group-gradient-anim" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#4a90e2">
+                <animate attributeName="offset" values="0;1;0" dur="3s" repeatCount="indefinite" />
+              </stop>
+              <stop offset="100%" stopColor="#7b1fa2">
+                <animate attributeName="offset" values="1;0;1" dur="3s" repeatCount="indefinite" />
+              </stop>
+            </linearGradient>
+            <linearGradient id="d3-group-bg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#f0f7ff" stopOpacity="0.92" />
+              <stop offset="100%" stopColor="#e1eaff" stopOpacity="0.8" />
+            </linearGradient>
+            <filter id="d3-group-shadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="1" stdDeviation="2.2" flood-color="#7b1fa2" flood-opacity="0.25" />
+              <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#4a90e2" flood-opacity="0.18" />
+            </filter>
+            <filter id="d3-group-rect-shadow" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#7b1fa2" flood-opacity="0.18" />
+            </filter>
+          </defs>
+        </g>
+      )
+    }
+
+    const gender = nodeDatum.attributes?.genre === 'H' ? '♂' : '♀'
+    const age = nodeDatum.attributes?.age
+    const photo = nodeDatum.attributes?.photo || defaultAvatar
+
     return (
-      <div className="tree-node">
-        <div className={`node-card ${isCurrent ? 'current-user' : ''}`}>
-          <div className="node-avatar">
-            {u.photo ? (
-              <img src={getPhotoUrl(u.photo)} alt={u.prenom} />
-            ) : (
-              <div className="avatar-placeholder">👤</div>
-            )}
-          </div>
-          <div className="node-info">
-            <div className="node-name">
-              {u.prenom} {u.nom}
-              {isCurrent && <span className="current-badge">Vous</span>}
+      <g>
+        <foreignObject width="170" height="72" x="-85" y="-36">
+          <div className="d3-node-card">
+            <div className="d3-node-avatar">
+              {photo ? (
+                <img src={photo} alt={nodeDatum.name} />
+              ) : (
+                <div className="d3-node-placeholder">👤</div>
+              )}
             </div>
-            <div className="node-details">{u.genre === 'H' ? '♂' : '♀'}</div>
+            <div className="d3-node-text">
+              <div className="d3-node-name">{nodeDatum.name}</div>
+              <div className="d3-node-meta">
+                <span>{gender}</span>
+                {age && <span>{age} ans</span>}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </foreignObject>
+      </g>
     )
   }
 
@@ -194,7 +321,7 @@ function Relations() {
         {/* Parents Section */}
         {userData.parents.length > 0 && (
           <div className="generation parents-generation">
-            <h3>Parents</h3>
+            <div className="generation-title">Parents</div>
             <div className="generation-members">
               {userData.parents.map(parent => (
                 <div key={parent.id}>
@@ -207,7 +334,7 @@ function Relations() {
 
         {/* Current User + Spouse + Siblings */}
         <div className="generation current-generation">
-          <h3>Ma Génération</h3>
+          <div className="generation-title">Ma Génération</div>
           <div className="generation-members">
             {/* Siblings */}
             {userData.siblings.map(sibling => (
@@ -232,7 +359,7 @@ function Relations() {
         {/* Children Section */}
         {userData.children.length > 0 && (
           <div className="generation children-generation">
-            <h3>Enfants</h3>
+            <div className="generation-title">Enfants</div>
             <div className="generation-members">
               {userData.children.map(child => (
                 <div key={child.id}>
@@ -256,11 +383,23 @@ function Relations() {
     )
   }
 
+  const { userMap, rootUser, currentUserId, visibleRelations } = buildFamilyTree()
+  // Debug : log currentUserId, rootUser, visibleRelations
+  console.log('currentUserId:', currentUserId)
+  console.log('rootUser:', rootUser)
+  console.log('visibleRelations:', visibleRelations)
+  const treeData = useMemo(() => buildTreeData(rootUser), [rootUser, selectedUserId])
+
+  useEffect(() => {
+    if (viewMode !== 'tree') return
+    if (!treeWrapperRef.current) return
+    const { width } = treeWrapperRef.current.getBoundingClientRect()
+    setTreeTranslate({ x: width / 2, y: 60 })
+  }, [viewMode, loading, relations, users])
+
   if (loading) {
     return <div className="loading"><div className="spinner"></div></div>
   }
-
-  const { userMap, rootUser, currentUserId, visibleRelations } = buildFamilyTree()
 
   return (
     <div>
@@ -271,7 +410,7 @@ function Relations() {
             Visualisation des relations familiales
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button
             className={`btn ${viewMode === 'tree' ? 'btn-primary' : ''}`}
             onClick={() => setViewMode('tree')}
@@ -284,6 +423,28 @@ function Relations() {
           >
             📋 Tableau
           </button>
+          {/* Sélecteur d'utilisateur pour les admins */}
+          {user &&
+            (
+              (user.user_type && String(user.user_type).toLowerCase().includes('admin')) ||
+              (user.role_name && String(user.role_name).toLowerCase().includes('admin'))
+            ) &&
+            user.id_tragnobe && (
+            <select
+              style={{ marginLeft: '20px', padding: '6px', borderRadius: '5px' }}
+              value={selectedUserId || ''}
+              onChange={e => setSelectedUserId(e.target.value)}
+            >
+              <option value="">Sélectionner un membre du tragnobe</option>
+              {users
+                .filter(u => u.id_tragnobe === user.id_tragnobe)
+                .map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.prenom} {u.nom} ({u.genre === 'H' ? '♂' : '♀'})
+                  </option>
+                ))}
+            </select>
+          )}
         </div>
       </div>
 
@@ -298,8 +459,19 @@ function Relations() {
               Aucune relation trouvée pour votre compte. Ajoutez vos relations familiales depuis votre profil.
             </div>
           ) : (
-            <div className="family-tree">
-              {renderCompleteTree(rootUser.id, userMap)}
+            <div className="family-tree" ref={treeWrapperRef}>
+              {treeData && (
+                <Tree
+                  data={treeData}
+                  translate={treeTranslate}
+                  orientation="vertical"
+                  pathFunc="elbow"
+                  nodeSize={{ x: 190, y: 140 }}
+                  separation={{ siblings: 1.1, nonSiblings: 1.3 }}
+                  renderCustomNodeElement={renderCustomNode}
+                  enableLegacyTransitions
+                />
+              )}
             </div>
           )}
         </div>

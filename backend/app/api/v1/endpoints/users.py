@@ -112,7 +112,7 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
     
     # Log activity
     log = LogActivite(
-        acteur_type=ActorTypeEnum.ADMIN,
+        acteur_type=ActorTypeEnum.admin,
         acteur_id=db_user.id,
         action=f"Création {role_name}",
         description=f"{db_user.prenom} {db_user.nom}"
@@ -212,7 +212,7 @@ async def delete_user(user_id: int, db: Session = Depends(get_db)):
     
     # Log before deletion
     log = LogActivite(
-        acteur_type=ActorTypeEnum.ADMIN,
+        acteur_type=ActorTypeEnum.admin,
         acteur_id=user_id,
         action="Suppression utilisateur",
         description=f"{db_user.prenom} {db_user.nom}"
@@ -239,7 +239,7 @@ async def validate_user(user_id: int, db: Session = Depends(get_db)):
     
     # Log activity
     log = LogActivite(
-        acteur_type=ActorTypeEnum.ADMIN,
+        acteur_type=ActorTypeEnum.admin,
         acteur_id=user_id,
         action="Validation membre",
         description=f"{db_user.prenom} {db_user.nom}"
@@ -264,7 +264,7 @@ async def reject_user(user_id: int, db: Session = Depends(get_db)):
     
     # Log activity
     log = LogActivite(
-        acteur_type=ActorTypeEnum.ADMIN,
+        acteur_type=ActorTypeEnum.admin,
         acteur_id=user_id,
         action="Rejet membre",
         description=f"{db_user.prenom} {db_user.nom}"

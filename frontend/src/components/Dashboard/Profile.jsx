@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import ChangePassword from './ChangePassword';
 import './Profile.css';
+import defaultAvatar from '../../img/profil homme.jpg';
 
 export default function Profile() {
   const { user, updateUser } = useAuth();
@@ -50,6 +51,41 @@ export default function Profile() {
       }
     }
   }, [user]);
+
+  // Charger les infos complètes du profil depuis la BDD
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      if (!user?.id) return;
+      try {
+        const response = await api.get(`/users/${user.id}`);
+        const fullUser = response.data;
+
+        setFormData({
+          nom: fullUser.nom || '',
+          prenom: fullUser.prenom || '',
+          email: fullUser.email || '',
+          telephone: fullUser.telephone || '',
+          ville: fullUser.ville || '',
+          annee_naissance: fullUser.annee_naissance || '',
+          genre: fullUser.genre || 'H',
+          id_tragnobe: fullUser.id_tragnobe || '',
+          id_lohantragno: fullUser.id_lohantragno || ''
+        });
+
+        if (fullUser.photo) {
+          setPhotoPreview(`http://localhost:8000/${fullUser.photo}`);
+        }
+
+        if (updateUser) {
+          updateUser(fullUser);
+        }
+      } catch (err) {
+        console.error('Erreur chargement profil:', err);
+      }
+    };
+
+    fetchUserDetails();
+  }, [user?.id, updateUser]);
 
   // Charger les tragnobes
   useEffect(() => {
@@ -350,9 +386,7 @@ export default function Profile() {
           {userData.photo ? (
             <img src={`http://localhost:8000${userData.photo}`} alt={userData.prenom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
-            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', fontSize: '20px' }}>
-              👤
-            </div>
+            <img src={defaultAvatar} alt="Profil par défaut" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           )}
         </div>
         <div style={{ flex: 1 }}>
@@ -428,12 +462,7 @@ export default function Profile() {
             {photoPreview ? (
               <img src={photoPreview} alt="Photo de profil" className="profile-photo" />
             ) : (
-              <div className="photo-placeholder">
-                <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-              </div>
+              <img src={defaultAvatar} alt="Profil par défaut" className="profile-photo" />
             )}
           </div>
           <label htmlFor="photo-upload" className="photo-upload-btn">

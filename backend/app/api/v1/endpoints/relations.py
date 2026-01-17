@@ -139,7 +139,7 @@ async def create_relation(relation: RelationCreate, db: Session = Depends(get_db
     
     # Log activity
     log = LogActivite(
-        acteur_type=ActorTypeEnum.ADMIN,
+        acteur_type=ActorTypeEnum.admin,
         acteur_id=0,
         action="Nouvelle relation",
         description=f"{user1.prenom} {user1.nom} - {relation.type_relation.value} - {user2.prenom} {user2.nom}"

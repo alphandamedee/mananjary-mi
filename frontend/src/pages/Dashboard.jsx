@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Sidebar from '../components/Sidebar'
@@ -19,6 +19,11 @@ function Dashboard() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [photoError, setPhotoError] = useState(false)
+
+  useEffect(() => {
+    setPhotoError(false)
+  }, [user?.photo])
 
   const handleLogout = () => {
     logout()
@@ -30,6 +35,9 @@ function Dashboard() {
     if (photo.startsWith('http')) return photo
     return `http://localhost:8000/${photo}`
   }
+
+  const hasValidPhoto = !!user?.photo && !['null', 'None', 'undefined', ''].includes(user.photo)
+  const photoUrl = hasValidPhoto ? getPhotoUrl(user.photo) : null
 
   return (
     <div className="dashboard-layout">
@@ -47,8 +55,12 @@ function Dashboard() {
           <div className="header-right">
             <div className="user-profile-header">
               <div className="user-avatar-small">
-                {user?.photo ? (
-                  <img src={getPhotoUrl(user.photo)} alt={user.prenom} />
+                {photoUrl && !photoError ? (
+                  <img
+                    src={photoUrl}
+                    alt={user?.prenom || 'Avatar'}
+                    onError={() => setPhotoError(true)}
+                  />
                 ) : (
                   <div className="avatar-placeholder-small">
                     👤

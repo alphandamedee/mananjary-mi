@@ -45,7 +45,7 @@ async def create_evenement(evenement: EvenementCreate, db: Session = Depends(get
     
     # Log activity
     log = LogActivite(
-        acteur_type=ActorTypeEnum.ADMIN,
+        acteur_type=ActorTypeEnum.admin,
         acteur_id=evenement.id_admin if evenement.id_admin else 0,
         action="Nouvel événement",
         description=f"{evenement.titre} - {evenement.type.value}"

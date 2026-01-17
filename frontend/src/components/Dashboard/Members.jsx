@@ -4,11 +4,17 @@ import { useAuth } from '../../contexts/AuthContext'
 
 function Members() {
   const { user } = useAuth()
+  const canManageMembers = user?.user_type === 'admin' || user?.user_type === 'super_admin' || user?.role_id === 1 || user?.role_id === 2
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [showAddForm, setShowAddForm] = useState(false)
   const [lohantragnoList, setLohantragnoList] = useState([])
+  const [relationUsers, setRelationUsers] = useState([])
+  const [relationData, setRelationData] = useState({
+    targetUserId: '',
+    type_relation: ''
+  })
   const [formData, setFormData] = useState({
     nom: '',
     prenom: '',
@@ -16,6 +22,7 @@ function Members() {
     telephone: '',
     mot_de_passe: '',
     genre: 'H',
+    annee_naissance: '',
     adresse: '',
     ville: '',
     id_tragnobe: user?.id_tragnobe || null,
@@ -34,6 +41,24 @@ function Members() {
       setFormData(prev => ({ ...prev, id_tragnobe: user.id_tragnobe }))
     }
   }, [user])
+
+  useEffect(() => {
+    const loadRelationUsers = async () => {
+      if (!formData.id_tragnobe) {
+        setRelationUsers([])
+        return
+      }
+      try {
+        const response = await api.get(`/users?id_tragnobe=${formData.id_tragnobe}`)
+        setRelationUsers(response.data)
+      } catch (error) {
+        console.error('Error loading relation users:', error)
+        setRelationUsers([])
+      }
+    }
+
+    loadRelationUsers()
+  }, [formData.id_tragnobe])
 
   const loadLohantragno = async (tragnobeId) => {
     try {
@@ -114,8 +139,52 @@ function Members() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!canManageMembers) {
+      alert('Accès refusé : vous n\'avez pas les droits pour ajouter un membre.')
+      return
+    }
     try {
-      await api.post('/users/', formData)
+      if (relationData.targetUserId && relationData.type_relation) {
+        const targetUser = relationUsers.find(u => u.id === parseInt(relationData.targetUserId, 10))
+        const newBirthYear = parseInt(formData.annee_naissance, 10)
+        const targetBirthYear = parseInt(targetUser?.annee_naissance, 10)
+
+        if (!newBirthYear || Number.isNaN(newBirthYear)) {
+          alert('Veuillez renseigner l\'année de naissance du nouveau membre pour vérifier la relation.')
+          return
+        }
+
+        if (!targetBirthYear || Number.isNaN(targetBirthYear)) {
+          alert('L\'année de naissance du membre sélectionné est manquante. Veuillez la compléter d\'abord.')
+          return
+        }
+
+        if (relationData.type_relation === 'pere' || relationData.type_relation === 'mere') {
+          if (targetBirthYear >= newBirthYear) {
+            alert('Chronologie invalide : le parent doit être plus âgé que l\'enfant.')
+            return
+          }
+        }
+
+        if (relationData.type_relation === 'fils' || relationData.type_relation === 'fille') {
+          if (targetBirthYear <= newBirthYear) {
+            alert('Chronologie invalide : l\'enfant doit être plus jeune que le parent.')
+            return
+          }
+        }
+      }
+
+      const createdUserResponse = await api.post('/users/', formData)
+      const createdUser = createdUserResponse.data
+
+      if (relationData.targetUserId && relationData.type_relation) {
+        await api.post('/relations/', {
+          id_user1: parseInt(relationData.targetUserId, 10),
+          id_user2: createdUser.id,
+          type_relation: relationData.type_relation
+        })
+      }
+
       alert('Membre ajouté avec succès!')
       setShowAddForm(false)
       setFormData({
@@ -125,12 +194,14 @@ function Members() {
         telephone: '',
         mot_de_passe: '',
         genre: 'H',
+        annee_naissance: '',
         adresse: '',
         ville: '',
         id_tragnobe: user?.id_tragnobe || null,
         id_lohantragno: null,
         id_role: 3
       })
+      setRelationData({ targetUserId: '', type_relation: '' })
       loadMembers()
     } catch (error) {
       console.error('Error creating member:', error)
@@ -147,12 +218,14 @@ function Members() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2>👥 Gestion des membres</h2>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            className="btn btn-success"
-            onClick={() => setShowAddForm(!showAddForm)}
-          >
-            {showAddForm ? '✕ Annuler' : '+ Ajouter un membre'}
-          </button>
+          {canManageMembers && (
+            <button
+              className="btn btn-success"
+              onClick={() => setShowAddForm(!showAddForm)}
+            >
+              {showAddForm ? '✕ Annuler' : '+ Ajouter un membre'}
+            </button>
+          )}
           <button
             className={`btn ${filter === 'all' ? 'btn-primary' : ''}`}
             onClick={() => setFilter('all')}
@@ -253,6 +326,18 @@ function Members() {
               </div>
 
               <div className="form-group">
+                <label>Année de naissance *</label>
+                <input
+                  type="number"
+                  name="annee_naissance"
+                  value={formData.annee_naissance}
+                  onChange={handleInputChange}
+                  required
+                  className="form-control"
+                />
+              </div>
+
+              <div className="form-group">
                 <label>Lohantragno</label>
                 <select
                   name="id_lohantragno"
@@ -289,6 +374,44 @@ function Members() {
                   className="form-control"
                   rows="2"
                 />
+              </div>
+
+              <div className="form-group">
+                <label>Créer une relation (même tragnobe)</label>
+                <select
+                  name="relation_target"
+                  value={relationData.targetUserId}
+                  onChange={(e) => setRelationData(prev => ({ ...prev, targetUserId: e.target.value }))}
+                  className="form-control"
+                >
+                  <option value="">Aucune relation</option>
+                  {relationUsers
+                    .filter(u => u.id !== user?.id)
+                    .map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.prenom} {u.nom}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Type de relation</label>
+                <select
+                  name="type_relation"
+                  value={relationData.type_relation}
+                  onChange={(e) => setRelationData(prev => ({ ...prev, type_relation: e.target.value }))}
+                  className="form-control"
+                  disabled={!relationData.targetUserId}
+                >
+                  <option value="">Sélectionner</option>
+                  <option value="pere">Père</option>
+                  <option value="mere">Mère</option>
+                  <option value="fils">Fils</option>
+                  <option value="fille">Fille</option>
+                  <option value="epoux">Époux</option>
+                  <option value="epouse">Épouse</option>
+                </select>
               </div>
             </div>
 
