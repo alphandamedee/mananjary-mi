@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
+import defaultAvatar from '../../img/profil homme.jpg'
 
 function Members() {
   const { user } = useAuth()
@@ -119,93 +120,13 @@ function Members() {
   }
 
   const formatDate = (dateString) => {
-    if (!dateString) return '-'
+    if (!dateString) return '-';
     try {
-      const date = new Date(dateString)
-      if (isNaN(date.getTime())) return '-'
-      return date.toLocaleDateString('fr-FR')
-    } catch {
-      return '-'
-    }
-  }
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!canManageMembers) {
-      alert('Accès refusé : vous n\'avez pas les droits pour ajouter un membre.')
-      return
-    }
-    try {
-      if (relationData.targetUserId && relationData.type_relation) {
-        const targetUser = relationUsers.find(u => u.id === parseInt(relationData.targetUserId, 10))
-        const newBirthYear = parseInt(formData.annee_naissance, 10)
-        const targetBirthYear = parseInt(targetUser?.annee_naissance, 10)
-
-        if (!newBirthYear || Number.isNaN(newBirthYear)) {
-          alert('Veuillez renseigner l\'année de naissance du nouveau membre pour vérifier la relation.')
-          return
-        }
-
-        if (!targetBirthYear || Number.isNaN(targetBirthYear)) {
-          alert('L\'année de naissance du membre sélectionné est manquante. Veuillez la compléter d\'abord.')
-          return
-        }
-
-        if (relationData.type_relation === 'pere' || relationData.type_relation === 'mere') {
-          if (targetBirthYear >= newBirthYear) {
-            alert('Chronologie invalide : le parent doit être plus âgé que l\'enfant.')
-            return
-          }
-        }
-
-        if (relationData.type_relation === 'fils' || relationData.type_relation === 'fille') {
-          if (targetBirthYear <= newBirthYear) {
-            alert('Chronologie invalide : l\'enfant doit être plus jeune que le parent.')
-            return
-          }
-        }
-      }
-
-      const createdUserResponse = await api.post('/users/', formData)
-      const createdUser = createdUserResponse.data
-
-      if (relationData.targetUserId && relationData.type_relation) {
-        await api.post('/relations/', {
-          id_user1: parseInt(relationData.targetUserId, 10),
-          id_user2: createdUser.id,
-          type_relation: relationData.type_relation
-        })
-      }
-
-      alert('Membre ajouté avec succès!')
-      setShowAddForm(false)
-      setFormData({
-        nom: '',
-        prenom: '',
-        email: '',
-        telephone: '',
-        mot_de_passe: '',
-        genre: 'H',
-        annee_naissance: '',
-        adresse: '',
-        ville: '',
-        id_tragnobe: user?.id_tragnobe || null,
-        id_lohantragno: null,
-        id_role: 3
-      })
-      setRelationData({ targetUserId: '', type_relation: '' })
-      loadMembers()
-    } catch (error) {
-      console.error('Error creating member:', error)
-      alert(error.response?.data?.detail || 'Erreur lors de la création du membre')
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return date.toLocaleDateString('fr-FR');
+    } catch (e) {
+      return '-';
     }
   }
 
@@ -449,32 +370,18 @@ function Members() {
             {members.map((member) => (
               <tr key={member.id}>
                 <td>
-                  {member.photo_profil ? (
-                    <img 
-                      src={`http://localhost:8000${member.photo_profil}`} 
-                      alt={`${member.prenom} ${member.nom}`}
-                      style={{ 
-                        width: '40px', 
-                        height: '40px', 
-                        borderRadius: '50%', 
-                        objectFit: 'cover' 
-                      }}
-                    />
-                  ) : (
-                    <div style={{
+                  <img
+                    src={member.photo_profil && member.photo_profil !== '/uploads/photos/' ? `http://localhost:8000${member.photo_profil}` : defaultAvatar}
+                    alt={member.photo_profil && member.photo_profil !== '/uploads/photos/' ? `${member.prenom} ${member.nom}` : 'Avatar par défaut'}
+                    style={{
                       width: '40px',
                       height: '40px',
                       borderRadius: '50%',
+                      objectFit: 'cover',
                       backgroundColor: '#e0e0e0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '20px',
-                      color: '#666'
-                    }}>
-                      👤
-                    </div>
-                  )}
+                      display: 'block'
+                    }}
+                  />
                 </td>
                 <td>{member.nom}</td>
                 <td>{member.prenom}</td>
@@ -518,7 +425,7 @@ function Members() {
         )}
       </div>
     </div>
-  )
+  );
 }
 
 export default Members
