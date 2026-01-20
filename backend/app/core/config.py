@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     
     # Database - CORRIGÉ: nom de la base de données
     DATABASE_URL: str = "mysql+pymysql://root:@localhost:3306/mananjary-mi"
-    
+    # DATABASE_URL = "mysql+pymysql://mnjr2674672:4fgti2ufui@213.255.195.35:3306/mananjary-mi"
     # JWT
     SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"

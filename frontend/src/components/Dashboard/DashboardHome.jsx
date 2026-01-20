@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import './DashboardHome.css'
 
 function DashboardHome() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalMembers: 0,
     pendingMembers: 0,
@@ -53,7 +55,7 @@ function DashboardHome() {
       <p className="subtitle">Vue d'ensemble de la plateforme</p>
 
       <div className="stats-grid">
-        <div className="stat-card">
+        <div className="stat-card clickable" onClick={() => navigate('/dashboard/members')} title="Voir les membres">
           <div className="stat-icon">👥</div>
           <div className="stat-content">
             <h3>{stats.totalMembers}</h3>
@@ -61,7 +63,7 @@ function DashboardHome() {
           </div>
         </div>
 
-        <div className="stat-card warning">
+        <div className="stat-card warning clickable" onClick={() => navigate('/dashboard/members?filter=pending')} title="Voir les membres en attente">
           <div className="stat-icon">⏳</div>
           <div className="stat-content">
             <h3>{stats.pendingMembers}</h3>
@@ -69,7 +71,7 @@ function DashboardHome() {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div className="stat-card clickable" onClick={() => navigate('/dashboard/tragnobes')} title="Voir les tragnobes">
           <div className="stat-icon">🏘️</div>
           <div className="stat-content">
             <h3>{stats.totalTragnobes}</h3>
@@ -77,7 +79,7 @@ function DashboardHome() {
           </div>
         </div>
 
-        <div className="stat-card success">
+        <div className="stat-card success clickable" onClick={() => navigate('/dashboard/cotisations')} title="Voir les cotisations">
           <div className="stat-icon">💰</div>
           <div className="stat-content">
             <h3>{stats.totalCotisations}</h3>
@@ -85,7 +87,7 @@ function DashboardHome() {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div className="stat-card clickable" onClick={() => navigate('/dashboard/dons')} title="Voir les dons">
           <div className="stat-icon">🎁</div>
           <div className="stat-content">
             <h3>{stats.totalDons}</h3>
@@ -93,7 +95,7 @@ function DashboardHome() {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div className="stat-card clickable" onClick={() => navigate('/dashboard/evenements')} title="Voir les événements">
           <div className="stat-icon">📅</div>
           <div className="stat-content">
             <h3>{stats.totalEvenements}</h3>

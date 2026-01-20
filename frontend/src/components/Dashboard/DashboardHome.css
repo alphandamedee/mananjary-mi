@@ -19,6 +19,7 @@
   margin-bottom: 30px;
 }
 
+
 .stat-card {
   background: white;
   border-radius: 12px;
@@ -28,6 +29,16 @@
   gap: 20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   transition: transform 0.2s ease;
+}
+
+.stat-card.clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.stat-card.clickable:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
 }
 
 .stat-card:hover {

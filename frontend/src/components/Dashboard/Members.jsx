@@ -1,14 +1,26 @@
 import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import api from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import defaultAvatar from '../../img/profil homme.jpg'
 
 function Members() {
+  const location = useLocation();
   const { user } = useAuth()
   const canManageMembers = user?.user_type === 'admin' || user?.user_type === 'super_admin' || user?.role_id === 1 || user?.role_id === 2
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('all')
+  // Détecter le filtre dans l'URL (ex: ?filter=pending)
+  const getInitialFilter = () => {
+    const params = new URLSearchParams(location.search);
+    return params.get('filter') || 'all';
+  };
+  const [filter, setFilter] = useState(getInitialFilter());
+
+  // Synchroniser le filtre si l'URL change (ex: navigation depuis dashboard)
+  useEffect(() => {
+    setFilter(getInitialFilter());
+  }, [location.search]);
   const [showAddForm, setShowAddForm] = useState(false)
   const [lohantragnoList, setLohantragnoList] = useState([])
   const [relationUsers, setRelationUsers] = useState([])
