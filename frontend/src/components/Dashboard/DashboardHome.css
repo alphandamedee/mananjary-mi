@@ -33,6 +33,7 @@
 
 .stat-card.clickable {
   cursor: pointer;
+  -webkit-user-select: none;
   user-select: none;
 }
 
